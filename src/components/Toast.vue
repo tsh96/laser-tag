@@ -1,24 +1,24 @@
 <template>
   <Teleport to="body">
-    <div class="fixed top-4 right-4 z-50 space-y-2">
+    <div class="toast-stack">
       <div
         v-for="notification in notifications"
         :key="notification.id"
         :class="[
-          'px-6 py-4 rounded-lg shadow-lg max-w-md transition-all duration-300',
-          notification.type === 'success' ? 'bg-green-600 text-white' :
-          notification.type === 'error' ? 'bg-red-600 text-white' :
-          notification.type === 'warning' ? 'bg-yellow-600 text-white' :
-          'bg-blue-600 text-white'
+          'toast-item',
+          notification.type === 'success' ? 'toast-item--success' :
+          notification.type === 'error' ? 'toast-item--error' :
+          notification.type === 'warning' ? 'toast-item--warning' :
+          'toast-item--info'
         ]"
       >
-        <div class="flex items-start">
-          <div class="flex-1">
-            <p class="font-semibold">{{ notification.message }}</p>
+        <div class="toast-content">
+          <div>
+            <p class="toast-message">{{ notification.message }}</p>
           </div>
           <button
             @click="removeNotification(notification.id)"
-            class="ml-4 text-white hover:text-gray-200 focus:outline-none"
+            class="toast-close"
           >
             ✕
           </button>
@@ -28,13 +28,14 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
+import type { Notification } from '../types'
 
-const notifications = ref([])
+const notifications = ref<Notification[]>([])
 let nextId = 1
 
-const addNotification = (message, type = 'info', duration = 3000) => {
+const addNotification = (message: string, type: Notification['type'] = 'info', duration = 3000) => {
   const id = nextId++
   notifications.value.push({ id, message, type })
   
@@ -45,7 +46,7 @@ const addNotification = (message, type = 'info', duration = 3000) => {
   }
 }
 
-const removeNotification = (id) => {
+const removeNotification = (id: number) => {
   const index = notifications.value.findIndex(n => n.id === id)
   if (index > -1) {
     notifications.value.splice(index, 1)

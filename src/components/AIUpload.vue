@@ -1,57 +1,64 @@
 <template>
-  <div class="bg-white rounded-lg shadow-lg p-6">
-    <h2 class="text-2xl font-bold mb-4 text-gray-800">AI Batch Entry</h2>
-    
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-2">
+  <section class="panel-card upload-card">
+    <div class="panel-head">
+      <h2 class="panel-title">AI Batch Entry</h2>
+      <p class="panel-subtitle">Upload a name list image and add detected names to history in one step.</p>
+    </div>
+
+    <div class="upload-zone">
+      <label class="field-label">
         Upload a photo of a name list
       </label>
       <input
         type="file"
         accept="image/*"
         @change="handleFileSelect"
-        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        class="upload-input"
       />
+      <p class="form-note">Supports photos and screenshots in common image formats.</p>
     </div>
-    
-    <div v-if="processing" class="text-center py-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-      <p class="mt-4 text-gray-600">Processing image with AI...</p>
+
+    <div v-if="processing" class="status-block">
+      <div class="loader"></div>
+      <p class="status-text">Processing image with AI...</p>
     </div>
-    
-    <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-      <p class="text-red-800">{{ error }}</p>
+
+    <div v-if="error" class="alert alert--error">
+      <p>{{ error }}</p>
     </div>
-    
-    <div v-if="success" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-      <p class="text-green-800">Successfully extracted {{ namesCount }} names!</p>
+
+    <div v-if="success" class="alert alert--success">
+      <p>Successfully extracted {{ namesCount }} names.</p>
     </div>
-    
-    <div class="text-sm text-gray-600">
-      <p class="mb-2"><strong>Tips:</strong></p>
-      <ul class="list-disc list-inside space-y-1">
+
+    <div class="tips-box">
+      <p class="tips-title">Tips</p>
+      <ul>
         <li>Take a clear, well-lit photo of the name list</li>
         <li>Ensure names are clearly visible and readable</li>
         <li>Works with handwritten or printed lists</li>
         <li>Each detected name will be added to history with current settings</li>
       </ul>
     </div>
-  </div>
+  </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { extractNamesFromImage } from '../utils/gemini'
 
-const emit = defineEmits(['names-extracted'])
+const emit = defineEmits<{
+  (e: 'names-extracted', names: string[]): void
+}>()
 
 const processing = ref(false)
-const error = ref(null)
+const error = ref<string | null>(null)
 const success = ref(false)
 const namesCount = ref(0)
 
-const handleFileSelect = async (event) => {
-  const file = event.target.files[0]
+const handleFileSelect = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
   if (!file) return
   
   processing.value = true
@@ -71,13 +78,13 @@ const handleFileSelect = async (event) => {
     emit('names-extracted', names)
     
     // Reset file input
-    event.target.value = ''
+    target.value = ''
     
     // Clear success message after 5 seconds
     setTimeout(() => {
       success.value = false
     }, 5000)
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'Failed to process image'
   } finally {
     processing.value = false

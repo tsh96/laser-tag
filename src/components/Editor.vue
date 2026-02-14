@@ -1,47 +1,51 @@
 <template>
-  <div class="bg-white rounded-lg shadow-lg p-6">
-    <h2 class="text-2xl font-bold mb-4 text-gray-800">Editor</h2>
-    
-    <!-- Input Fields -->
-    <div class="grid grid-cols-2 gap-4 mb-4">
+  <section class="panel-card editor-card">
+    <div class="panel-head">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Width</label>
+        <h2 class="panel-title">Editor</h2>
+        <p class="panel-subtitle">Adjust dimensions, preview live output, and export when ready.</p>
+      </div>
+    </div>
+
+    <div class="editor-grid">
+      <div>
+        <label class="field-label">Width</label>
         <input
           v-model.number="settings.width"
           type="number"
           min="0.1"
           step="0.1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="field-control"
         />
       </div>
-      
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Height</label>
+        <label class="field-label">Height</label>
         <input
           v-model.number="settings.height"
           type="number"
           min="0.1"
           step="0.1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="field-control"
         />
       </div>
-      
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Logo Padding</label>
+        <label class="field-label">Logo Padding</label>
         <input
           v-model.number="settings.padding"
           type="number"
           min="0"
           step="0.1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="field-control"
         />
       </div>
-      
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+        <label class="field-label">Unit</label>
         <select
           v-model="settings.unit"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="field-control"
         >
           <option value="mm">mm</option>
           <option value="cm">cm</option>
@@ -49,68 +53,71 @@
         </select>
       </div>
     </div>
-    
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Text</label>
+
+    <div class="stack-gap-md">
+      <label class="field-label">Text</label>
       <input
         v-model="text"
         type="text"
         placeholder="Enter text to engrave"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="field-control"
       />
+      <p class="form-note">Preview updates automatically as you type.</p>
     </div>
-    
-    <div class="mb-4">
-      <label class="flex items-center">
+
+    <div class="stack-gap-md">
+      <label class="check-wrap">
         <input
           v-model="settings.isFlipped"
           type="checkbox"
-          class="mr-2"
+          class="check-input"
         />
-        <span class="text-sm font-medium text-gray-700">Flip Horizontally</span>
+        <span class="check-label">Flip Horizontally</span>
       </label>
     </div>
-    
-    <!-- Canvas Preview -->
-    <div class="border-2 border-gray-300 rounded-lg p-4 bg-gray-50 overflow-auto">
-      <div class="flex justify-center items-center min-h-[200px]">
+
+    <div class="preview-shell">
+      <p class="preview-label">Live Preview</p>
+      <div class="preview-stage">
         <canvas
           ref="canvasRef"
-          class="border border-gray-400 bg-white"
+          class="preview-canvas"
           style="max-width: 100%; height: auto;"
         />
       </div>
     </div>
-    
-    <!-- Action Buttons -->
-    <div class="mt-4 flex gap-2">
+
+    <div class="action-row">
       <button
         @click="saveToHistory"
-        class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="btn-primary action-btn"
       >
         Save to History
       </button>
       <button
         @click="exportBMP"
-        class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+        class="btn-secondary action-btn"
       >
         Export BMP
       </button>
     </div>
-  </div>
+  </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import { renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
+import type { LaserSettings } from '../types'
 
-const emit = defineEmits(['save'])
+const emit = defineEmits<{
+  (e: 'save', payload: { text: string; settings: LaserSettings }): void
+}>()
 
-const canvasRef = ref(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 
-const settings = reactive({
+const settings = reactive<LaserSettings>({
   width: 3,
   height: 1,
   padding: 0.5,
@@ -147,5 +154,9 @@ watch([text, settings], updateCanvas, { deep: true })
 
 onMounted(() => {
   updateCanvas()
+})
+
+defineExpose({
+  settings
 })
 </script>

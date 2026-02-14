@@ -2,22 +2,22 @@
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      class="dialog-overlay"
       @click.self="cancel"
     >
-      <div class="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ title }}</h3>
-        <p class="text-gray-600 mb-6">{{ message }}</p>
-        <div class="flex gap-3 justify-end">
+      <div class="dialog-panel">
+        <h3 class="dialog-title">{{ title }}</h3>
+        <p class="dialog-text">{{ message }}</p>
+        <div class="dialog-actions">
           <button
             @click="cancel"
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            class="dialog-cancel"
           >
             Cancel
           </button>
           <button
             @click="confirm"
-            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            class="dialog-confirm"
           >
             Confirm
           </button>
@@ -27,20 +27,20 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
 const isOpen = ref(false)
 const title = ref('')
 const message = ref('')
-let resolvePromise = null
+let resolvePromise: ((value: boolean) => void) | null = null
 
-const show = (titleText, messageText) => {
+const show = (titleText: string, messageText: string) => {
   title.value = titleText
   message.value = messageText
   isOpen.value = true
   
-  return new Promise((resolve) => {
+  return new Promise<boolean>((resolve) => {
     resolvePromise = resolve
   })
 }

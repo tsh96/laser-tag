@@ -1,53 +1,53 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <!-- Header -->
-    <header class="bg-gray-800 text-white shadow-lg">
-      <div class="container mx-auto px-4 py-6">
-        <h1 class="text-3xl font-bold">LaserTag</h1>
-        <p class="text-gray-300">Laser Engraving Tool - Generate 1-bit BMP files</p>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-header__inner">
+        <div class="app-header__row">
+          <h1 class="app-title">LaserTag</h1>
+          <span class="app-badge">
+            1-bit BMP
+          </span>
+        </div>
+        <p class="app-subtitle">
+          Laser engraving label studio with live preview, quick export, and AI-assisted batch name extraction.
+        </p>
       </div>
     </header>
-    
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <!-- Editor -->
+
+    <main class="app-main">
+      <div class="app-main__grid">
         <Editor @save="handleSave" ref="editorRef" />
-        
-        <!-- AI Upload -->
         <AIUpload @names-extracted="handleNamesExtracted" />
       </div>
-      
-      <!-- History -->
+
       <History ref="historyRef" />
     </main>
-    
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-12">
-      <div class="container mx-auto px-4 py-6 text-center">
-        <p class="text-gray-400">LaserTag PWA - Built with Vue.js, Firebase & Gemini AI</p>
+
+    <footer class="app-footer">
+      <div class="app-footer__inner">
+        LaserTag PWA · Built with Vue, Firebase, and Gemini AI
       </div>
     </footer>
-    
-    <!-- Toast Notifications -->
+
     <Toast ref="toastRef" />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import Editor from './components/Editor.vue'
 import AIUpload from './components/AIUpload.vue'
 import History from './components/History.vue'
 import Toast from './components/Toast.vue'
 import { useHistory } from './composables/useHistory'
+import type { LaserSettings } from './types'
 
 const { addHistoryItem } = useHistory()
-const editorRef = ref(null)
-const toastRef = ref(null)
-const historyRef = ref(null)
+const editorRef = ref<InstanceType<typeof Editor> | null>(null)
+const toastRef = ref<InstanceType<typeof Toast> | null>(null)
+const historyRef = ref<InstanceType<typeof History> | null>(null)
 
-const handleSave = async ({ text, settings }) => {
+const handleSave = async ({ text, settings }: { text: string; settings: LaserSettings }) => {
   if (!text || text.trim() === '') {
     toastRef.value?.addNotification('Please enter text before saving', 'warning')
     return
@@ -57,9 +57,9 @@ const handleSave = async ({ text, settings }) => {
   toastRef.value?.addNotification('Saved to history!', 'success')
 }
 
-const handleNamesExtracted = async (names) => {
+const handleNamesExtracted = async (names: string[]) => {
   // Get current settings from editor
-  const settings = editorRef.value ? {
+  const settings: LaserSettings = editorRef.value ? {
     width: editorRef.value.settings.width,
     height: editorRef.value.settings.height,
     padding: editorRef.value.settings.padding,
