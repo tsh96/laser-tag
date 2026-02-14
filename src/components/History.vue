@@ -26,6 +26,22 @@
       {{ uploadError }}
     </div>
 
+    <div class="stack-gap-md">
+      <label for="gemini-api-key" class="field-label">Gemini API Key</label>
+      <input id="gemini-api-key" v-model="geminiApiKeyInput" type="password" class="field-control"
+        placeholder="Paste your Gemini API key" autocomplete="off" />
+      <div class="action-row">
+        <button type="button" class="btn-primary" @click="saveGeminiApiKeySetting">
+          Save API Key
+        </button>
+        <button type="button" class="btn-secondary btn-secondary--alt" @click="clearGeminiApiKeySetting">
+          Clear
+        </button>
+      </div>
+      <p class="form-note">Stored only in this browser (localStorage).</p>
+      <p v-if="geminiApiKeyStatus" class="form-note">{{ geminiApiKeyStatus }}</p>
+    </div>
+
     <div v-if="loading" class="status-block">
       <div class="loader"></div>
       <p class="status-text">Loading history...</p>
@@ -95,7 +111,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
 import { renderMiniature, renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
-import { extractNamesFromImage } from '../utils/gemini'
+import { extractNamesFromImage, getGeminiApiKey, saveGeminiApiKey } from '../utils/gemini'
 import ConfirmDialog from './ConfirmDialog.vue'
 import type { HistoryItem } from '../types'
 
@@ -118,7 +134,21 @@ const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
 const uploadError = ref<string | null>(null)
+const geminiApiKeyInput = ref(getGeminiApiKey())
+const geminiApiKeyStatus = ref<string | null>(null)
 let resizeObserver: ResizeObserver | null = null
+
+const saveGeminiApiKeySetting = () => {
+  saveGeminiApiKey(geminiApiKeyInput.value)
+  geminiApiKeyInput.value = getGeminiApiKey()
+  geminiApiKeyStatus.value = geminiApiKeyInput.value ? 'Gemini API key saved locally.' : 'Gemini API key removed.'
+}
+
+const clearGeminiApiKeySetting = () => {
+  geminiApiKeyInput.value = ''
+  saveGeminiApiKey('')
+  geminiApiKeyStatus.value = 'Gemini API key removed.'
+}
 
 const handleFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement

@@ -1,6 +1,31 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
+const GEMINI_API_KEY_STORAGE_KEY = 'laser-tag-gemini-api-key'
+
+export function getGeminiApiKey(): string {
+  if (typeof window !== 'undefined') {
+    const storedApiKey = window.localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY)?.trim()
+    if (storedApiKey) {
+      return storedApiKey
+    }
+  }
+
+  return (import.meta.env.VITE_GEMINI_API_KEY || '').trim()
+}
+
+export function saveGeminiApiKey(apiKey: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const normalizedApiKey = apiKey.trim()
+  if (!normalizedApiKey) {
+    window.localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY)
+    return
+  }
+
+  window.localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, normalizedApiKey)
+}
 
 /**
  * Extract names from an image using Gemini AI
@@ -9,6 +34,12 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY)
  */
 export async function extractNamesFromImage(imageFile: File): Promise<string[]> {
   try {
+    const geminiApiKey = getGeminiApiKey()
+    if (!geminiApiKey) {
+      throw new Error('Gemini API key is required')
+    }
+
+    const genAI = new GoogleGenerativeAI(geminiApiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     // Convert image to base64
@@ -48,6 +79,9 @@ If no names are found, return an empty response.`
     return names
   } catch (error) {
     console.error('Error extracting names:', error)
+    if (error instanceof Error && error.message === 'Gemini API key is required') {
+      throw new Error('Gemini API key is required. Add it in History before using AI import.')
+    }
     throw new Error('Failed to extract names from image')
   }
 }

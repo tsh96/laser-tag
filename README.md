@@ -47,7 +47,8 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file based on `.env.example` and fill in your Firebase and Gemini AI credentials.
+Create a `.env` file based on `.env.example` and fill in your Firebase credentials.  
+Gemini API key can be entered directly in the app (History panel) and is saved in your browser's localStorage.
 
 ### 3. Run Development Server
 
