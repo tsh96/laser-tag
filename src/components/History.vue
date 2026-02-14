@@ -93,6 +93,9 @@
           </div>
         </div>
       </div>
+      <div v-if="hasMore" ref="loadMoreTriggerRef" class="history-load-trigger" aria-hidden="true">
+        <div v-if="loadingMore" class="loader loader--small"></div>
+      </div>
     </div>
 
     <div v-if="isSettingsModalOpen" class="dialog-overlay" @click.self="closeSettingsModal">
@@ -134,12 +137,13 @@ const emit = defineEmits<{
   (e: 'select-item', item: HistoryItem): void
 }>()
 
-const { historyItems, loading, error, updateHistoryItem, deleteHistoryItem } = useHistory()
+const { historyItems, loading, loadingMore, hasMore, error, updateHistoryItem, deleteHistoryItem, loadMoreHistory } = useHistory()
 
 const canvasRefs = ref<Record<string, HTMLCanvasElement>>({})
 const itemRefs = ref<Record<string, HTMLElement>>({})
 const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog> | null>(null)
 const historyListRef = ref<HTMLElement | null>(null)
+const loadMoreTriggerRef = ref<HTMLElement | null>(null)
 const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
@@ -147,7 +151,9 @@ const uploadError = ref<string | null>(null)
 const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
 const isSettingsModalOpen = ref(false)
+const LOAD_MORE_THRESHOLD = 0.2
 let resizeObserver: ResizeObserver | null = null
+let loadMoreObserver: IntersectionObserver | null = null
 
 const openSettingsModal = () => {
   isSettingsModalOpen.value = true
@@ -280,6 +286,28 @@ const confirmDelete = async (id: string) => {
 }
 
 watch(historyItems, renderPreviews, { deep: true })
+watch([historyItems, hasMore], async () => {
+  await nextTick()
+
+  if (loadMoreObserver) {
+    loadMoreObserver.disconnect()
+    loadMoreObserver = null
+  }
+
+  if (!hasMore.value || !loadMoreTriggerRef.value || typeof IntersectionObserver === 'undefined') {
+    return
+  }
+
+  loadMoreObserver = new IntersectionObserver((entries) => {
+    if (!loadingMore.value && entries.some(entry => entry.isIntersecting)) {
+      void loadMoreHistory()
+    }
+  }, {
+    threshold: LOAD_MORE_THRESHOLD
+  })
+
+  loadMoreObserver.observe(loadMoreTriggerRef.value)
+})
 
 onMounted(() => {
   renderPreviews()
@@ -297,5 +325,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   resizeObserver?.disconnect()
+  loadMoreObserver?.disconnect()
 })
 </script>

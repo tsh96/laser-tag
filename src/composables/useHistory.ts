@@ -6,11 +6,15 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   query,
   orderBy,
   where,
-  onSnapshot,
+  limit,
+  startAfter,
   serverTimestamp,
+  QueryDocumentSnapshot,
+  DocumentData,
   Unsubscribe
 } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -18,33 +22,52 @@ import { auth, db } from '../firebase'
 import type { LaserSettings, HistoryItem } from '../types'
 
 export function useHistory() {
+  const PAGE_SIZE = 20
   const historyItems = ref<HistoryItem[]>([])
   const loading = ref(true)
+  const loadingMore = ref(false)
+  const hasMore = ref(false)
   const error = ref<string | null>(null)
-  let unsubscribe: Unsubscribe | null = null
   let unsubscribeAuth: Unsubscribe | null = null
+  const currentUserId = ref<string | null>(null)
+  const lastVisible = ref<QueryDocumentSnapshot<DocumentData> | null>(null)
 
-  const fetchHistory = (userId: string) => {
+  const fetchHistory = async (userId: string, reset = true) => {
     try {
+      if (reset) {
+        loading.value = true
+        historyItems.value = []
+        lastVisible.value = null
+      }
+
+      error.value = null
+
       const q = query(
         collection(db, 'history'),
         where('userId', '==', userId),
-        orderBy('timestamp', 'desc')
+        orderBy('timestamp', 'desc'),
+        ...(lastVisible.value && !reset
+          ? [startAfter(lastVisible.value)]
+          : []),
+        limit(PAGE_SIZE)
       )
 
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        historyItems.value = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as HistoryItem))
-        loading.value = false
-      }, (err) => {
-        error.value = err.message
-        loading.value = false
-      })
+      const snapshot = await getDocs(q)
+      const newItems = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as HistoryItem))
+
+      historyItems.value = reset
+        ? newItems
+        : [...historyItems.value, ...newItems]
+      lastVisible.value = snapshot.docs.at(-1) ?? null
+      hasMore.value = snapshot.docs.length === PAGE_SIZE
     } catch (err: any) {
       error.value = err.message
+    } finally {
       loading.value = false
+      loadingMore.value = false
     }
   }
 
@@ -62,6 +85,16 @@ export function useHistory() {
         userId: user.uid,
         timestamp: serverTimestamp()
       })
+      const createdSnapshot = await getDoc(docRef)
+      const createdData = createdSnapshot.data()
+
+      historyItems.value = [{
+        id: docRef.id,
+        text: (createdData?.text as string) ?? text,
+        settings: (createdData?.settings as LaserSettings) ?? settings,
+        status: (createdData?.status as HistoryItem['status']) ?? 'pending',
+        timestamp: createdData?.timestamp ?? null
+      }, ...historyItems.value]
       return docRef.id
     } catch (err: any) {
       error.value = err.message
@@ -83,6 +116,11 @@ export function useHistory() {
       }
 
       await updateDoc(docRef, updates as any)
+      historyItems.value = historyItems.value.map(item => (
+        item.id === id
+          ? { ...item, ...updates }
+          : item
+      ))
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -103,32 +141,38 @@ export function useHistory() {
       }
 
       await deleteDoc(docRef)
+      historyItems.value = historyItems.value.filter(item => item.id !== id)
     } catch (err: any) {
       error.value = err.message
       throw err
     }
   }
 
+  const loadMoreHistory = async () => {
+    if (!currentUserId.value || loading.value || loadingMore.value || !hasMore.value) {
+      return
+    }
+
+    loadingMore.value = true
+    await fetchHistory(currentUserId.value, false)
+  }
+
   onMounted(() => {
     unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      unsubscribe?.()
-      unsubscribe = null
+      currentUserId.value = user?.uid ?? null
 
       if (!user) {
         historyItems.value = []
+        hasMore.value = false
         loading.value = false
         return
       }
 
-      loading.value = true
-      fetchHistory(user.uid)
+      void fetchHistory(user.uid, true)
     })
   })
 
   onUnmounted(() => {
-    if (unsubscribe) {
-      unsubscribe()
-    }
     if (unsubscribeAuth) {
       unsubscribeAuth()
     }
@@ -137,9 +181,12 @@ export function useHistory() {
   return {
     historyItems,
     loading,
+    loadingMore,
+    hasMore,
     error,
     addHistoryItem,
     updateHistoryItem,
-    deleteHistoryItem
+    deleteHistoryItem,
+    loadMoreHistory
   }
 }
