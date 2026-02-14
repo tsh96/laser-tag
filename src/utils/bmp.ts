@@ -129,15 +129,18 @@ let overwriteHandle: FileSystemFileHandle | null = null
 
 /**
  * Save BMP to a fixed path when supported, asking user only the first time.
- * Returns true when saved via File System Access API; false when fallback is needed.
+ * Returns whether the save was completed, cancelled by user, or needs fallback.
  */
-export async function overwriteBMP(blob: Blob, filename = 'output.bmp'): Promise<boolean> {
+export async function overwriteBMP(
+  blob: Blob,
+  filename = 'output.bmp'
+): Promise<'saved' | 'cancelled' | 'fallback'> {
   const pickerWindow = window as Window & {
     showSaveFilePicker?: (options?: SaveFilePickerOptions) => Promise<FileSystemFileHandle>
   }
 
   if (!pickerWindow.showSaveFilePicker) {
-    return false
+    return 'fallback'
   }
 
   try {
@@ -154,13 +157,13 @@ export async function overwriteBMP(blob: Blob, filename = 'output.bmp'): Promise
     const writable = await overwriteHandle.createWritable()
     await writable.write(blob)
     await writable.close()
-    return true
+    return 'saved'
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return true
+      return 'cancelled'
     }
 
     overwriteHandle = null
-    return false
+    return 'fallback'
   }
 }

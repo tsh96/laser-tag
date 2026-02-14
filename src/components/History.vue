@@ -206,8 +206,8 @@ const exportItem = async (item: HistoryItem, overwrite: boolean) => {
   const blob = generateBMP(exportCanvas, item.settings.isFlipped)
 
   if (overwrite) {
-    const saved = await overwriteBMP(blob, 'output.bmp')
-    if (!saved) {
+    const result = await overwriteBMP(blob, 'output.bmp')
+    if (result === 'fallback') {
       downloadBMP(blob, 'output.bmp')
     }
   } else {
