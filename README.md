@@ -24,6 +24,21 @@ A Progressive Web App (PWA) for generating 1-bit monochrome BMP files for laser 
 
 ## Setup Instructions
 
+### Option 1: Dev Container (Recommended)
+
+The fastest way to get started is using VS Code Dev Containers:
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop) and [VS Code](https://code.visualstudio.com/)
+2. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+3. Open this repository in VS Code
+4. Press `F1` and select "Dev Containers: Reopen in Container"
+5. Create `.env` file from `.env.example` and add your credentials
+6. Start developing! Dependencies are automatically installed.
+
+See [.devcontainer/README.md](.devcontainer/README.md) for more details.
+
+### Option 2: Local Setup
+
 ### 1. Install dependencies
 
 ```bash
