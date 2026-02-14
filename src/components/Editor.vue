@@ -3,7 +3,6 @@
     <div class="panel-head">
       <div>
         <h2 class="panel-title">Editor</h2>
-        <p class="panel-subtitle">Adjust dimensions, preview live output, and export when ready.</p>
       </div>
     </div>
 
@@ -62,7 +61,6 @@
         placeholder="Enter text to engrave"
         class="field-control"
       />
-      <p class="form-note">Preview updates automatically as you type.</p>
     </div>
 
     <div class="stack-gap-md">

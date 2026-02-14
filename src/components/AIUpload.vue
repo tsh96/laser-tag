@@ -2,7 +2,6 @@
   <section class="panel-card upload-card">
     <div class="panel-head">
       <h2 class="panel-title">AI Batch Entry</h2>
-      <p class="panel-subtitle">Upload a name list image and add detected names to history in one step.</p>
     </div>
 
     <div class="upload-zone">
@@ -13,9 +12,10 @@
         type="file"
         accept="image/*"
         @change="handleFileSelect"
+        aria-describedby="upload-help"
         class="upload-input"
       />
-      <p class="form-note">Supports photos and screenshots in common image formats.</p>
+      <p id="upload-help" class="form-note">Supports common image formats. Best results with a clear, well-lit image.</p>
     </div>
 
     <div v-if="processing" class="status-block">
@@ -31,15 +31,6 @@
       <p>Successfully extracted {{ namesCount }} names.</p>
     </div>
 
-    <div class="tips-box">
-      <p class="tips-title">Tips</p>
-      <ul>
-        <li>Take a clear, well-lit photo of the name list</li>
-        <li>Ensure names are clearly visible and readable</li>
-        <li>Works with handwritten or printed lists</li>
-        <li>Each detected name will be added to history with current settings</li>
-      </ul>
-    </div>
   </section>
 </template>
 

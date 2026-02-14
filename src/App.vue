@@ -8,9 +8,6 @@
             1-bit BMP
           </span>
         </div>
-        <p class="app-subtitle">
-          Laser engraving label studio with live preview, quick export, and AI-assisted batch name extraction.
-        </p>
       </div>
     </header>
 
@@ -22,12 +19,6 @@
 
       <History ref="historyRef" />
     </main>
-
-    <footer class="app-footer">
-      <div class="app-footer__inner">
-        LaserTag PWA · Built with Vue, Firebase, and Gemini AI
-      </div>
-    </footer>
 
     <Toast ref="toastRef" />
   </div>
