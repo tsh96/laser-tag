@@ -71,7 +71,7 @@
                 Export (Overwrite)
               </button>
               <button
-                @click="deleteItem(item.id)"
+                @click="confirmDelete(item.id)"
                 class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Delete
@@ -81,6 +81,9 @@
         </div>
       </div>
     </div>
+    
+    <!-- Confirm Dialog -->
+    <ConfirmDialog ref="confirmDialogRef" />
   </div>
 </template>
 
@@ -90,10 +93,12 @@ import { useHistory } from '../composables/useHistory'
 import { renderMiniature } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
 import { renderCanvas } from '../utils/canvas'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const { historyItems, loading, error, updateHistoryItem, deleteHistoryItem } = useHistory()
 
 const canvasRefs = ref({})
+const confirmDialogRef = ref(null)
 
 const setCanvasRef = (id, el) => {
   if (el) {
@@ -137,8 +142,13 @@ const exportItem = async (item, overwrite) => {
   }
 }
 
-const deleteItem = async (id) => {
-  if (confirm('Are you sure you want to delete this item?')) {
+const confirmDelete = async (id) => {
+  const confirmed = await confirmDialogRef.value?.show(
+    'Delete Item',
+    'Are you sure you want to delete this item? This action cannot be undone.'
+  )
+  
+  if (confirmed) {
     await deleteHistoryItem(id)
   }
 }

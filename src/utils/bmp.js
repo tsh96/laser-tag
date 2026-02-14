@@ -40,8 +40,8 @@ export function generateBMP(canvas, isFlipped = false) {
   view.setUint16(28, 1, true) // Bits per pixel (1-bit)
   view.setUint32(30, 0, true) // Compression (none)
   view.setUint32(34, pixelArraySize, true) // Image size
-  view.setInt32(38, 2835, true) // X pixels per meter (72 DPI)
-  view.setInt32(42, 2835, true) // Y pixels per meter (72 DPI)
+  view.setInt32(38, 11811, true) // X pixels per meter (300 DPI)
+  view.setInt32(42, 11811, true) // Y pixels per meter (300 DPI)
   view.setUint32(46, 2, true) // Colors used
   view.setUint32(50, 2, true) // Important colors
   

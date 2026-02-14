@@ -19,7 +19,7 @@
       </div>
       
       <!-- History -->
-      <History />
+      <History ref="historyRef" />
     </main>
     
     <!-- Footer -->
@@ -28,6 +28,9 @@
         <p class="text-gray-400">LaserTag PWA - Built with Vue.js, Firebase & Gemini AI</p>
       </div>
     </footer>
+    
+    <!-- Toast Notifications -->
+    <Toast ref="toastRef" />
   </div>
 </template>
 
@@ -36,19 +39,22 @@ import { ref } from 'vue'
 import Editor from './components/Editor.vue'
 import AIUpload from './components/AIUpload.vue'
 import History from './components/History.vue'
+import Toast from './components/Toast.vue'
 import { useHistory } from './composables/useHistory'
 
 const { addHistoryItem } = useHistory()
 const editorRef = ref(null)
+const toastRef = ref(null)
+const historyRef = ref(null)
 
 const handleSave = async ({ text, settings }) => {
   if (!text || text.trim() === '') {
-    alert('Please enter text before saving')
+    toastRef.value?.addNotification('Please enter text before saving', 'warning')
     return
   }
   
   await addHistoryItem(text, settings)
-  alert('Saved to history!')
+  toastRef.value?.addNotification('Saved to history!', 'success')
 }
 
 const handleNamesExtracted = async (names) => {
@@ -71,5 +77,7 @@ const handleNamesExtracted = async (names) => {
   for (const name of names) {
     await addHistoryItem(name, settings)
   }
+  
+  toastRef.value?.addNotification(`Successfully added ${names.length} names to history!`, 'success', 5000)
 }
 </script>
