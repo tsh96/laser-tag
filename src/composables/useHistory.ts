@@ -95,6 +95,7 @@ export function useHistory() {
         status: (createdData?.status as HistoryItem['status']) ?? 'pending',
         timestamp: createdData?.timestamp ?? null
       }, ...historyItems.value]
+      return docRef.id
     } catch (err: any) {
       error.value = err.message
       throw err

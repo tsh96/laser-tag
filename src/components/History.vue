@@ -56,6 +56,7 @@
         <div class="history-item__layout">
           <div class="history-preview">
             <div v-if="item.status === 'pending'" class="history-tag">Pending</div>
+            <div v-if="item.settings?.isFlipped" class="history-tag history-tag--flipped">Flipped</div>
             <canvas :ref="el => setCanvasRef(item.id, el)" class="history-canvas" />
             <div class="history-actions">
               <button @click.stop="exportItem(item, false)" class="history-icon-btn" type="button"
@@ -107,7 +108,8 @@
         <p v-if="geminiApiKeyStatus" class="form-note">{{ geminiApiKeyStatus }}</p>
         <div class="dialog-actions">
           <button type="button" class="dialog-cancel" @click="closeSettingsModal">Close</button>
-          <button type="button" class="btn-secondary btn-secondary--alt" @click="clearGeminiApiKeySetting">Clear</button>
+          <button type="button" class="btn-secondary btn-secondary--alt"
+            @click="clearGeminiApiKeySetting">Clear</button>
           <button type="button" class="btn-primary" @click="saveGeminiApiKeySetting">Save API Key</button>
         </div>
       </div>
