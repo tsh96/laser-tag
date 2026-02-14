@@ -3,11 +3,22 @@
     <header class="app-header">
       <div class="app-header__inner">
         <div class="app-header__row">
-          <h1 class="app-title">LaserTag</h1>
+          <div class="app-header__brand">
+            <span class="app-logo">⚡</span>
+            <h1 class="app-title">LaserTag</h1>
+          </div>
           <div v-if="user" class="app-header__user">
-            <span class="app-user-email">{{ user.email }}</span>
-            <button class="btn-secondary app-inline-btn" type="button" @click="handleSignOut">
-              Sign out
+            <div class="user-info">
+              <span class="app-user-label">USER</span>
+              <span class="app-user-email">{{ user.email }}</span>
+            </div>
+            <button class="btn-logout" type="button" @click="handleSignOut" title="Sign out">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </button>
           </div>
         </div>
@@ -26,33 +37,22 @@
           <p class="panel-subtitle">Use Firebase email/password auth to access history and editor.</p>
         </div>
 
-        <form class="editor-grid" @submit.prevent="handleSignIn">
-          <div>
-            <label for="auth-email" class="field-label">Email</label>
-            <input
-              id="auth-email"
-              v-model.trim="email"
-              type="email"
-              class="field-control"
-              autocomplete="email"
-              required
-            >
+        <form class="auth-form" @submit.prevent="handleSignIn">
+          <div class="auth-fields">
+            <div class="field-group">
+              <label for="auth-email" class="field-label">Email</label>
+              <input id="auth-email" v-model.trim="email" type="email" class="field-control"
+                placeholder="name@example.com" autocomplete="email" required>
+            </div>
+
+            <div class="field-group">
+              <label for="auth-password" class="field-label">Password</label>
+              <input id="auth-password" v-model="password" type="password" class="field-control" placeholder="••••••••"
+                autocomplete="current-password" minlength="6" required>
+            </div>
           </div>
 
-          <div>
-            <label for="auth-password" class="field-label">Password</label>
-            <input
-              id="auth-password"
-              v-model="password"
-              type="password"
-              class="field-control"
-              autocomplete="current-password"
-              minlength="6"
-              required
-            >
-          </div>
-
-          <div class="action-row auth-action-row">
+          <div class="auth-actions">
             <button class="btn-primary" type="submit" :disabled="authBusy || authLoading">
               {{ authBusy ? 'Signing in...' : 'Sign in' }}
             </button>
