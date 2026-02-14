@@ -92,6 +92,9 @@
           </div>
         </div>
       </div>
+      <div v-if="hasMore" ref="loadMoreTriggerRef" class="history-load-trigger" aria-hidden="true">
+        <div v-if="loadingMore" class="loader loader--small"></div>
+      </div>
     </div>
 
     <div v-if="isSettingsModalOpen" class="dialog-overlay" @click.self="closeSettingsModal">
@@ -118,10 +121,8 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
 import { renderMiniature, renderCanvas } from '../utils/canvas'
-import { generateBMP, downloadBMP } from '../utils/bmp'
-import { extractNamesFromImage, getGeminiApiKey, saveGeminiApiKey } from '../utils/gemini'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
-import { extractNamesFromImage } from '../utils/gemini'
+import { extractNamesFromImage, getGeminiApiKey, saveGeminiApiKey } from '../utils/gemini'
 import ConfirmDialog from './ConfirmDialog.vue'
 import type { HistoryItem } from '../types'
 
@@ -134,12 +135,13 @@ const emit = defineEmits<{
   (e: 'select-item', item: HistoryItem): void
 }>()
 
-const { historyItems, loading, error, updateHistoryItem, deleteHistoryItem } = useHistory()
+const { historyItems, loading, loadingMore, hasMore, error, updateHistoryItem, deleteHistoryItem, loadMoreHistory } = useHistory()
 
 const canvasRefs = ref<Record<string, HTMLCanvasElement>>({})
 const itemRefs = ref<Record<string, HTMLElement>>({})
 const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog> | null>(null)
 const historyListRef = ref<HTMLElement | null>(null)
+const loadMoreTriggerRef = ref<HTMLElement | null>(null)
 const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
@@ -148,6 +150,7 @@ const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
 const isSettingsModalOpen = ref(false)
 let resizeObserver: ResizeObserver | null = null
+let loadMoreObserver: IntersectionObserver | null = null
 
 const openSettingsModal = () => {
   isSettingsModalOpen.value = true
@@ -280,6 +283,28 @@ const confirmDelete = async (id: string) => {
 }
 
 watch(historyItems, renderPreviews, { deep: true })
+watch([historyItems, hasMore], async () => {
+  await nextTick()
+
+  if (loadMoreObserver) {
+    loadMoreObserver.disconnect()
+    loadMoreObserver = null
+  }
+
+  if (!hasMore.value || !loadMoreTriggerRef.value || typeof IntersectionObserver === 'undefined') {
+    return
+  }
+
+  loadMoreObserver = new IntersectionObserver((entries) => {
+    if (entries.some(entry => entry.isIntersecting)) {
+      void loadMoreHistory()
+    }
+  }, {
+    threshold: 0.2
+  })
+
+  loadMoreObserver.observe(loadMoreTriggerRef.value)
+})
 
 onMounted(() => {
   renderPreviews()
@@ -297,5 +322,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   resizeObserver?.disconnect()
+  loadMoreObserver?.disconnect()
 })
 </script>
