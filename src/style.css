@@ -658,6 +658,12 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+.history-tag--flipped {
+  right: auto;
+  left: 0.4rem;
+  background: var(--success);
+}
+
 .history-preview::after {
   content: "";
   position: absolute;
