@@ -10,7 +10,7 @@
 
     <main class="app-main">
       <div class="app-main__grid">
-        <History @names-extracted="handleNamesExtracted" />
+        <History @names-extracted="handleNamesExtracted" @select-item="handleHistorySelected" />
         <Editor @save="handleSave" ref="editorRef" />
       </div>
     </main>
@@ -25,7 +25,7 @@ import Editor from './components/Editor.vue'
 import History from './components/History.vue'
 import Toast from './components/Toast.vue'
 import { useHistory } from './composables/useHistory'
-import type { LaserSettings } from './types'
+import type { HistoryItem, LaserSettings } from './types'
 
 const { addHistoryItem } = useHistory()
 const editorRef = ref<InstanceType<typeof Editor> | null>(null)
@@ -75,5 +75,10 @@ const handleNamesExtracted = async (names: string[]) => {
   }
 
   toastRef.value?.addNotification(`Successfully added ${names.length} names to history!`, 'success', 5000)
+}
+
+const handleHistorySelected = (item: HistoryItem) => {
+  editorRef.value?.loadHistoryItem(item)
+  toastRef.value?.addNotification('Loaded history item into editor', 'info', 2000)
 }
 </script>

@@ -9,43 +9,22 @@
     <div class="editor-grid">
       <div>
         <label class="field-label">Width</label>
-        <input
-          v-model.number="settings.width"
-          type="number"
-          min="0.1"
-          step="0.1"
-          class="field-control"
-        />
+        <input v-model.number="settings.width" type="number" min="0.1" step="0.1" class="field-control" />
       </div>
 
       <div>
         <label class="field-label">Height</label>
-        <input
-          v-model.number="settings.height"
-          type="number"
-          min="0.1"
-          step="0.1"
-          class="field-control"
-        />
+        <input v-model.number="settings.height" type="number" min="0.1" step="0.1" class="field-control" />
       </div>
 
       <div>
         <label class="field-label">Logo Padding</label>
-        <input
-          v-model.number="settings.padding"
-          type="number"
-          min="0"
-          step="0.1"
-          class="field-control"
-        />
+        <input v-model.number="settings.padding" type="number" min="0" step="0.1" class="field-control" />
       </div>
 
       <div>
         <label class="field-label">Unit</label>
-        <select
-          v-model="settings.unit"
-          class="field-control"
-        >
+        <select v-model="settings.unit" class="field-control">
           <option value="mm">mm</option>
           <option value="cm">cm</option>
           <option value="in">in</option>
@@ -55,21 +34,12 @@
 
     <div class="stack-gap-md">
       <label class="field-label">Text</label>
-      <textarea
-        v-model="text"
-        placeholder="Enter text to engrave"
-        class="field-control"
-        rows="2"
-      ></textarea>
+      <textarea v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
     </div>
 
     <div class="stack-gap-md">
       <label class="check-wrap">
-        <input
-          v-model="settings.isFlipped"
-          type="checkbox"
-          class="check-input"
-        />
+        <input v-model="settings.isFlipped" type="checkbox" class="check-input" />
         <span class="check-label">Flip Horizontally</span>
       </label>
     </div>
@@ -77,25 +47,15 @@
     <div class="preview-shell">
       <p class="preview-label">Live Preview</p>
       <div class="preview-stage">
-        <canvas
-          ref="canvasRef"
-          class="preview-canvas"
-          style="max-width: 100%; height: auto;"
-        />
+        <canvas ref="canvasRef" class="preview-canvas" style="max-width: 100%; height: auto;" />
       </div>
     </div>
 
     <div class="action-row">
-      <button
-        @click="saveToHistory"
-        class="btn-primary action-btn"
-      >
+      <button @click="saveToHistory" class="btn-primary action-btn">
         Save to History
       </button>
-      <button
-        @click="exportBMP"
-        class="btn-secondary action-btn"
-      >
+      <button @click="exportBMP" class="btn-secondary action-btn">
         Export BMP
       </button>
     </div>
@@ -107,7 +67,7 @@ import { ref, reactive, watch, onMounted } from 'vue'
 import { useStorage } from '@vueuse/core'
 import { renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
-import type { LaserSettings } from '../types'
+import type { HistoryItem, LaserSettings } from '../types'
 
 const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
 
@@ -194,11 +154,16 @@ const exportBMP = () => {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
     renderCanvas(exportCanvas, text.value, settings)
-    
+
     const blob = generateBMP(exportCanvas, settings.isFlipped)
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     downloadBMP(blob, `laser-tag-${timestamp}.bmp`)
   }
+}
+
+const loadHistoryItem = (item: HistoryItem) => {
+  text.value = item.text
+  Object.assign(settings, sanitizeSettings(item.settings))
 }
 
 watch(
@@ -219,6 +184,7 @@ onMounted(() => {
 })
 
 defineExpose({
-  settings
+  settings,
+  loadHistoryItem
 })
 </script>

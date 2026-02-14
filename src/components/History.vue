@@ -7,19 +7,17 @@
           {{ historyItems.length }} item{{ historyItems.length === 1 ? '' : 's' }}
         </span>
       </div>
-      
+
       <div class="history-head__actions">
         <label class="camera-btn" :class="{ 'is-processing': processing }">
-          <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
           <div v-else class="loader loader--small"></div>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            @change="handleFileSelect"
-            class="hidden-input"
-            :disabled="processing"
-          />
+          <input type="file" accept="image/*" capture="environment" @change="handleFileSelect" class="hidden-input"
+            :disabled="processing" />
         </label>
       </div>
     </div>
@@ -42,64 +40,44 @@
       <p class="empty-hint">Use the camera icon above to capture a list of names with AI.</p>
     </div>
 
-    <div v-else class="history-list">
-      <div
-        v-for="item in historyItems"
-        :key="item.id"
-        class="history-item"
-      >
+    <div v-else ref="historyListRef" class="history-list">
+      <div v-for="item in historyItems" :key="item.id" :ref="el => setItemRef(item.id, el)" class="history-item"
+        :class="{ 'history-item--selected': selectedHistoryId === item.id }" :title="formatTimestamp(item.timestamp)"
+        role="button" tabindex="0" @click="selectItem(item)" @keydown.enter.prevent="selectItem(item)"
+        @keydown.space.prevent="selectItem(item)">
         <div class="history-item__layout">
           <div class="history-preview">
-            <p class="preview-label">Preview</p>
-            <canvas
-              :ref="el => setCanvasRef(item.id, el)"
-              class="history-canvas"
-              width="200"
-              height="100"
-            />
-          </div>
-
-          <div class="history-content">
-            <div class="history-item__head">
-              <div>
-                <h3 class="history-title">{{ item.text }}</h3>
-                <p class="history-time">
-                  {{ formatTimestamp(item.timestamp) }}
-                </p>
-              </div>
-              <span
-                v-if="item.status === 'pending'"
-                class="pending-badge"
-              >
-                Pending
-              </span>
-            </div>
-
-            <div class="history-meta">
-              <span class="history-meta__label">Dimensions:</span>
-              {{ item.settings.width }} × {{ item.settings.height }} {{ item.settings.unit }}
-              (Padding: {{ item.settings.padding }} {{ item.settings.unit }})
-              <span v-if="item.settings.isFlipped" class="history-meta__flipped">• Flipped</span>
-            </div>
-
+            <canvas :ref="el => setCanvasRef(item.id, el)" class="history-canvas" />
             <div class="history-actions">
-              <button
-                @click="exportItem(item, false)"
-                class="btn-secondary"
-              >
-                Export (New)
+              <button @click.stop="exportItem(item, false)" class="history-icon-btn" type="button"
+                title="Export as a new file" aria-label="Export as a new file">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
               </button>
-              <button
-                @click="exportItem(item, true)"
-                class="btn-secondary btn-secondary--alt"
-              >
-                Export (Overwrite)
+              <button @click.stop="exportItem(item, true)" class="history-icon-btn history-icon-btn--alt" type="button"
+                title="Export and overwrite output.bmp" aria-label="Export and overwrite output dot bmp">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 0 1 15.3-6.36L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-15.3 6.36L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
               </button>
-              <button
-                @click="confirmDelete(item.id)"
-                class="btn-danger"
-              >
-                Delete
+              <button @click.stop="confirmDelete(item.id)" class="history-icon-btn history-icon-btn--danger"
+                type="button" title="Delete item" aria-label="Delete item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
               </button>
             </div>
           </div>
@@ -112,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
 import { renderMiniature, renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
@@ -126,32 +104,37 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'names-extracted', names: string[]): void
+  (e: 'select-item', item: HistoryItem): void
 }>()
 
 const { historyItems, loading, error, updateHistoryItem, deleteHistoryItem } = useHistory()
 
 const canvasRefs = ref<Record<string, HTMLCanvasElement>>({})
+const itemRefs = ref<Record<string, HTMLElement>>({})
 const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog> | null>(null)
+const historyListRef = ref<HTMLElement | null>(null)
+const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
 const uploadError = ref<string | null>(null)
+let resizeObserver: ResizeObserver | null = null
 
 const handleFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  
+
   processing.value = true
   uploadError.value = null
-  
+
   try {
     const names = await extractNamesFromImage(file)
-    
+
     if (names.length === 0) {
       uploadError.value = 'No names were detected in the image.'
       return
     }
-    
+
     emit('names-extracted', names)
     target.value = ''
   } catch (err: any) {
@@ -161,40 +144,66 @@ const handleFileSelect = async (event: Event) => {
   }
 }
 
-const setCanvasRef = (id: string, el: Element | null) => {
-  if (el) {
-    canvasRefs.value[id] = el as HTMLCanvasElement
+const setCanvasRef = (id: string, el: unknown) => {
+  if (el instanceof HTMLCanvasElement) {
+    canvasRefs.value[id] = el
+  }
+}
+
+const setItemRef = (id: string, el: unknown) => {
+  if (el instanceof HTMLElement) {
+    itemRefs.value[id] = el
   }
 }
 
 const renderPreviews = async () => {
   await nextTick()
-  
+
   historyItems.value.forEach(item => {
     const canvas = canvasRefs.value[item.id]
     if (canvas && item.settings) {
-      renderMiniature(canvas, item.text, item.settings, 200, 100)
+      const parentWidth = Math.floor(canvas.parentElement?.clientWidth || 200)
+      const maxWidth = Math.max(140, parentWidth)
+      const maxHeight = Math.max(80, Math.floor(parentWidth * 0.6))
+      renderMiniature(canvas, item.text, item.settings, maxWidth, maxHeight)
     }
   })
 }
 
+const selectItem = (item: HistoryItem) => {
+  selectedHistoryId.value = item.id
+
+  const selectedElement = itemRefs.value[item.id]
+  selectedElement?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'nearest'
+  })
+
+  emit('select-item', item)
+}
+
 const formatTimestamp = (timestamp: any) => {
   if (!timestamp) return 'Just now'
-  
+
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
-  return date.toLocaleString()
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  })
 }
 
 const exportItem = async (item: HistoryItem, overwrite: boolean) => {
   // Mark as exported
   await updateHistoryItem(item.id, { status: 'exported' } as any)
-  
+
   // Generate BMP
   const exportCanvas = document.createElement('canvas')
   renderCanvas(exportCanvas, item.text, item.settings)
-  
+
   const blob = generateBMP(exportCanvas, item.settings.isFlipped)
-  
+
   if (overwrite) {
     downloadBMP(blob, 'output.bmp')
   } else {
@@ -208,7 +217,7 @@ const confirmDelete = async (id: string) => {
     'Delete Item',
     'Are you sure you want to delete this item? This action cannot be undone.'
   )
-  
+
   if (confirmed) {
     await deleteHistoryItem(id)
   }
@@ -218,5 +227,19 @@ watch(historyItems, renderPreviews, { deep: true })
 
 onMounted(() => {
   renderPreviews()
+
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      renderPreviews()
+    })
+
+    if (historyListRef.value) {
+      resizeObserver.observe(historyListRef.value)
+    }
+  }
+})
+
+onUnmounted(() => {
+  resizeObserver?.disconnect()
 })
 </script>

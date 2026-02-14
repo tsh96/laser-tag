@@ -55,8 +55,8 @@ body {
 .app-header__inner,
 .app-main,
 .app-footer__inner {
-  width: min(1120px, calc(100% - 2rem));
-  margin-inline: auto;
+  width: 100%;
+  padding-inline: 1rem;
 }
 
 .app-header__inner {
@@ -402,8 +402,7 @@ body {
 
 .app-main__grid--single {
   grid-template-columns: 1fr !important;
-  max-width: 800px;
-  margin-inline: auto;
+  max-width: none;
 }
 
 .history-count {
@@ -445,6 +444,20 @@ body {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(9, 14, 28, 0.72);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.history-item:focus-visible {
+  outline: none;
+  border-color: rgba(57, 208, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(57, 208, 255, 0.2);
+}
+
+.history-item--selected {
+  border-color: rgba(57, 208, 255, 0.55);
+  background: rgba(11, 20, 37, 0.9);
 }
 
 .history-item__layout {
@@ -454,58 +467,105 @@ body {
 }
 
 .history-preview {
+  position: relative;
+  width: 100%;
   max-width: 100%;
 }
 
-.history-content {
-  min-width: 0;
+.history-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: rgba(107, 114, 128, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
+  z-index: 1;
 }
 
-.history-item__head {
+.history-item:hover .history-preview::after,
+.history-item:focus-within .history-preview::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.history-canvas {
+  width: 100%;
+  display: block;
+}
+
+.history-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-bottom: 0.35rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
+  z-index: 2;
 }
 
-.history-title {
-  margin: 0;
-  font-size: 1.04rem;
-  color: #f7faff;
-  overflow-wrap: anywhere;
+.history-item:hover .history-actions,
+.history-item:focus-within .history-actions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
-.history-time {
-  margin: 0.15rem 0 0;
-  font-size: 0.78rem;
-  color: var(--text-muted);
+.history-icon-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #133126;
+  color: #8ff0c1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    border-color 120ms ease;
 }
 
-.pending-badge {
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #ffe7be;
-  background: rgba(255, 186, 66, 0.2);
-  border: 1px solid rgba(255, 186, 66, 0.45);
+.history-icon-btn svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-.history-meta {
-  margin: 0 0 0.8rem;
-  font-size: 0.86rem;
-  color: #ced9f2;
+.history-icon-btn:hover {
+  filter: brightness(1.1);
+  border-color: rgba(143, 240, 193, 0.5);
 }
 
-.history-meta__label {
-  font-weight: 700;
-  color: #eef4ff;
+.history-icon-btn:active {
+  transform: translateY(1px);
 }
 
-.history-meta__flipped {
-  margin-left: 0.5rem;
-  color: #9beeff;
+.history-icon-btn--alt {
+  background: #123347;
+  color: #9fefff;
+}
+
+.history-icon-btn--danger {
+  background: #3d1b27;
+  color: #ff9cb0;
+}
+
+.history-icon-btn--danger:hover {
+  border-color: rgba(255, 156, 176, 0.55);
 }
 
 .dialog-overlay {
@@ -648,7 +708,6 @@ body {
   }
 
   .action-row,
-  .history-actions,
   .dialog-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -669,14 +728,6 @@ body {
 
   .editor-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .history-item__layout {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .history-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .toast-stack {
