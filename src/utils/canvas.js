@@ -1,0 +1,156 @@
+/**
+ * Convert units to pixels at 300 DPI
+ * @param {number} value - The value in the specified unit
+ * @param {string} unit - The unit (mm, cm, in)
+ * @returns {number} Value in pixels at 300 DPI
+ */
+export function convertToPixels(value, unit) {
+  const DPI = 300
+  
+  switch (unit) {
+    case 'mm':
+      return (value / 25.4) * DPI
+    case 'cm':
+      return (value / 2.54) * DPI
+    case 'in':
+      return value * DPI
+    default:
+      return value
+  }
+}
+
+/**
+ * Render text on canvas with auto-scaling
+ * @param {HTMLCanvasElement} canvas - The canvas element
+ * @param {string} text - The text to render
+ * @param {Object} settings - Settings object with width, height, padding, unit, isFlipped
+ */
+export function renderCanvas(canvas, text, settings) {
+  const { width, height, padding, unit, isFlipped } = settings
+  
+  // Convert dimensions to pixels at 300 DPI
+  const widthPx = convertToPixels(width, unit)
+  const heightPx = convertToPixels(height, unit)
+  const paddingPx = convertToPixels(padding, unit)
+  
+  // Set canvas size
+  canvas.width = widthPx
+  canvas.height = heightPx
+  
+  const ctx = canvas.getContext('2d')
+  
+  // Clear canvas with white background
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(0, 0, widthPx, heightPx)
+  
+  // Draw logo dead-zone with hatch pattern
+  ctx.fillStyle = '#F3F4F6'
+  ctx.fillRect(0, 0, paddingPx, heightPx)
+  
+  // Draw hatch pattern
+  ctx.strokeStyle = '#D1D5DB'
+  ctx.lineWidth = 1
+  const hatchSpacing = 10
+  
+  for (let i = -heightPx; i < paddingPx; i += hatchSpacing) {
+    ctx.beginPath()
+    ctx.moveTo(i, 0)
+    ctx.lineTo(i + heightPx, heightPx)
+    ctx.stroke()
+  }
+  
+  // Calculate engrave zone
+  const engraveX = paddingPx
+  const engraveWidth = widthPx - paddingPx
+  const engraveHeight = heightPx
+  
+  // Apply 5% safety margin
+  const safetyMargin = 0.05
+  const safeWidth = engraveWidth * (1 - safetyMargin * 2)
+  const safeHeight = engraveHeight * (1 - safetyMargin * 2)
+  
+  if (!text || text.trim() === '') {
+    return
+  }
+  
+  // Auto-scale text to fit
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  
+  // Binary search for optimal font size
+  let minSize = 1
+  let maxSize = 500
+  let fontSize = maxSize
+  
+  while (maxSize - minSize > 1) {
+    fontSize = Math.floor((minSize + maxSize) / 2)
+    ctx.font = `${fontSize}px Arial`
+    
+    const metrics = ctx.measureText(text)
+    const textWidth = metrics.width
+    const textHeight = fontSize // Approximate height
+    
+    if (textWidth <= safeWidth && textHeight <= safeHeight) {
+      minSize = fontSize
+    } else {
+      maxSize = fontSize
+    }
+  }
+  
+  fontSize = minSize
+  ctx.font = `${fontSize}px Arial`
+  
+  // Draw text centered in engrave zone
+  const textX = engraveX + engraveWidth / 2
+  const textY = engraveHeight / 2
+  
+  if (isFlipped) {
+    ctx.save()
+    ctx.translate(widthPx, 0)
+    ctx.scale(-1, 1)
+    ctx.fillText(text, widthPx - textX, textY)
+    ctx.restore()
+  } else {
+    ctx.fillText(text, textX, textY)
+  }
+}
+
+/**
+ * Render a miniature preview of the canvas
+ * @param {HTMLCanvasElement} canvas - The target canvas element
+ * @param {string} text - The text to render
+ * @param {Object} settings - Settings object
+ * @param {number} maxWidth - Maximum width of the preview
+ * @param {number} maxHeight - Maximum height of the preview
+ */
+export function renderMiniature(canvas, text, settings, maxWidth = 200, maxHeight = 100) {
+  const { width, height, padding, unit } = settings
+  
+  // Calculate aspect ratio
+  const widthPx = convertToPixels(width, unit)
+  const heightPx = convertToPixels(height, unit)
+  const aspectRatio = widthPx / heightPx
+  
+  // Calculate preview dimensions
+  let previewWidth, previewHeight
+  if (aspectRatio > maxWidth / maxHeight) {
+    previewWidth = maxWidth
+    previewHeight = maxWidth / aspectRatio
+  } else {
+    previewHeight = maxHeight
+    previewWidth = maxHeight * aspectRatio
+  }
+  
+  canvas.width = previewWidth
+  canvas.height = previewHeight
+  
+  // Create a temporary canvas at full resolution
+  const tempCanvas = document.createElement('canvas')
+  renderCanvas(tempCanvas, text, settings)
+  
+  // Scale down to preview size
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = true
+  ctx.drawImage(tempCanvas, 0, 0, previewWidth, previewHeight)
+}
