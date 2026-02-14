@@ -1,0 +1,49 @@
+{
+  "name": "LaserTag PWA Development",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Vue.volar",
+        "Vue.vscode-typescript-vue-plugin",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[vue]": {
+          "editor.defaultFormatter": "Vue.volar"
+        },
+        "files.associations": {
+          "*.css": "tailwindcss"
+        }
+      }
+    }
+  },
+
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "postCreateCommand": "npm install",
+
+  "initializeCommand": "[ -f .env ] || cp .env.example .env",
+
+  "remoteEnv": {
+    "NODE_ENV": "development"
+  },
+
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env,target=${containerWorkspaceFolder}/.env,type=bind,consistency=cached"
+  ],
+
+  "remoteUser": "node"
+}
