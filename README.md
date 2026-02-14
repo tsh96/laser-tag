@@ -8,6 +8,7 @@ A Progressive Web App (PWA) for generating 1-bit monochrome BMP files for laser 
 - **Logo Dead-Zone**: Visual representation of pre-printed logo area with hatch pattern
 - **Multi-Unit Support**: Work with mm, cm, or inches
 - **Firebase Integration**: Real-time history synchronization
+- **Email/Password Auth**: Firebase Authentication sign-in and account creation
 - **AI-Powered OCR**: Extract names from photos using Gemini AI
 - **1-Bit BMP Export**: Generate industry-standard BMP files at 300 DPI
 - **Horizontal Flip**: Mirror text for special engraving needs
@@ -48,6 +49,7 @@ npm install
 ### 2. Configure Environment Variables
 
 Create a `.env` file based on `.env.example` and fill in your Firebase and Gemini AI credentials.
+Also enable **Email/Password** under Firebase Console → Authentication → Sign-in method.
 
 ### 3. Run Development Server
 

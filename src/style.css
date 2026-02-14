@@ -78,6 +78,22 @@ body {
   letter-spacing: -0.02em;
 }
 
+.app-header__user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.app-user-email {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.app-inline-btn {
+  width: auto;
+  min-width: 0;
+}
+
 .app-badge {
   padding: 0.28rem 0.65rem;
   border-radius: 999px;
@@ -104,6 +120,12 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+.auth-card {
+  max-width: 540px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .panel-card {
