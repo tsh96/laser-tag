@@ -1,6 +1,6 @@
 {
   "name": "LaserTag PWA Development",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
   
   "features": {
     "ghcr.io/devcontainers/features/git:1": {}

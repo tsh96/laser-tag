@@ -9,7 +9,7 @@ A Dev Container is a Docker container that provides a fully configured developme
 - **GitHub Codespaces** - Cloud-based development environments
 
 The container includes:
-- Node.js 20 LTS
+- Node.js 24 LTS (Krypton)
 - All necessary tools and dependencies
 - Pre-configured VS Code extensions
 - Port forwarding for the Vite dev server
@@ -63,7 +63,7 @@ Perfect for quick access from anywhere, no local setup required.
 - **5173** - Vite development server (automatically forwarded)
 
 ### Features
-- Node.js 20 LTS
+- Node.js 24 LTS (Krypton)
 - npm package manager
 - Git
 - Automatic dependency installation on container creation
@@ -147,11 +147,13 @@ Edit `.devcontainer/devcontainer.json` and add to the `extensions` array:
 
 ### Changing Node Version
 
-Update the `image` property in `devcontainer.json`:
+**Note:** This project requires Node.js 24 LTS (Krypton) or later. If you need to use a different version for testing purposes, update the `image` property in `devcontainer.json`:
 
 ```json
-"image": "mcr.microsoft.com/devcontainers/javascript-node:18"
+"image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm"
 ```
+
+Available tags: `24`, `24-bookworm`, `24-bullseye`, etc.
 
 ### Adding Tools
 

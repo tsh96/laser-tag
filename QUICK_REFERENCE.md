@@ -197,7 +197,7 @@ npm install
 
 ## Troubleshooting Checklist
 
-- [ ] Node.js installed (v18+)
+- [ ] Node.js 24 LTS installed
 - [ ] Dependencies installed (`npm install`)
 - [ ] `.env` file created with valid keys
 - [ ] Firebase project created and configured
@@ -211,7 +211,7 @@ npm install
 
 - Vue.js: 3.5+
 - Vite: 7.x
-- Node.js: 18+ recommended
+- Node.js: 24 LTS (Krypton) required
 - Firebase: 10.x
 - Tailwind CSS: Latest
 
