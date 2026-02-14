@@ -151,7 +151,10 @@ watch(
 
 const updateCanvas = () => {
   if (canvasRef.value) {
-    renderCanvas(canvasRef.value, text.value, settings)
+    const actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    if (settings.autoSize && typeof actualFontSize === 'number' && settings.fontSize !== actualFontSize) {
+      settings.fontSize = actualFontSize
+    }
   }
 }
 
