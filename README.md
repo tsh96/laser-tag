@@ -48,8 +48,8 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file based on `.env.example` and fill in your Firebase and Gemini AI credentials.
-Also enable **Email/Password** under Firebase Console → Authentication → Sign-in method.
+Create a `.env` file based on `.env.example` and fill in your Firebase credentials.  
+Gemini API key can be entered directly in the app (History panel) and is saved in your browser's localStorage.
 
 ### 3. Run Development Server
 
@@ -62,5 +62,19 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Deploy to GitHub Pages
+
+1. In your repository, go to **Settings → Secrets and variables → Actions**.
+2. Add these repository secrets (same names as the environment variables):
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_GEMINI_API_KEY`
+3. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+4. Push to `main` (or run the workflow manually) to build and deploy.
 
 See full documentation in the README for detailed setup and usage instructions.

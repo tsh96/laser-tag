@@ -523,6 +523,12 @@ body {
   gap: 0.8rem;
 }
 
+.history-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .camera-btn {
   display: flex;
   align-items: center;
@@ -901,7 +907,7 @@ body {
 
 @media (min-width: 1024px) {
   .app-main__grid {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 400px minmax(0, 1fr);
     align-items: stretch;
     gap: 1.5rem;
     flex: 1;
