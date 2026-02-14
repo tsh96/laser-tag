@@ -55,12 +55,12 @@
 
     <div class="stack-gap-md">
       <label class="field-label">Text</label>
-      <input
+      <textarea
         v-model="text"
-        type="text"
         placeholder="Enter text to engrave"
         class="field-control"
-      />
+        rows="2"
+      ></textarea>
     </div>
 
     <div class="stack-gap-md">
@@ -104,9 +104,34 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
+import { useStorage } from '@vueuse/core'
 import { renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
 import type { LaserSettings } from '../types'
+
+const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
+
+const DEFAULT_SETTINGS: LaserSettings = {
+  width: 3,
+  height: 1,
+  padding: 0.5,
+  unit: 'in',
+  isFlipped: false
+}
+
+const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
+  return value === 'mm' || value === 'cm' || value === 'in'
+}
+
+const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
+  return {
+    width: typeof value.width === 'number' && value.width > 0 ? value.width : DEFAULT_SETTINGS.width,
+    height: typeof value.height === 'number' && value.height > 0 ? value.height : DEFAULT_SETTINGS.height,
+    padding: typeof value.padding === 'number' && value.padding >= 0 ? value.padding : DEFAULT_SETTINGS.padding,
+    unit: isValidUnit(value.unit) ? value.unit : DEFAULT_SETTINGS.unit,
+    isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped
+  }
+}
 
 const emit = defineEmits<{
   (e: 'save', payload: { text: string; settings: LaserSettings }): void
@@ -115,13 +140,41 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 
-const settings = reactive<LaserSettings>({
-  width: 3,
-  height: 1,
-  padding: 0.5,
-  unit: 'in',
-  isFlipped: false
-})
+const storedSettings = useStorage<LaserSettings>(
+  SETTINGS_STORAGE_KEY,
+  { ...DEFAULT_SETTINGS },
+  localStorage,
+  {
+    serializer: {
+      read: (raw) => {
+        try {
+          return sanitizeSettings(JSON.parse(raw) as Partial<LaserSettings>)
+        } catch {
+          return { ...DEFAULT_SETTINGS }
+        }
+      },
+      write: (value) => JSON.stringify(sanitizeSettings(value))
+    }
+  }
+)
+
+const settings = reactive<LaserSettings>(sanitizeSettings(storedSettings.value))
+
+watch(
+  settings,
+  (nextSettings) => {
+    storedSettings.value = sanitizeSettings({ ...nextSettings })
+  },
+  { deep: true }
+)
+
+watch(
+  storedSettings,
+  (nextStoredSettings) => {
+    Object.assign(settings, sanitizeSettings(nextStoredSettings))
+  },
+  { deep: true }
+)
 
 const updateCanvas = () => {
   if (canvasRef.value) {
@@ -148,7 +201,18 @@ const exportBMP = () => {
   }
 }
 
-watch([text, settings], updateCanvas, { deep: true })
+watch(
+  [
+    text,
+    () => settings.width,
+    () => settings.height,
+    () => settings.padding,
+    () => settings.unit,
+    () => settings.isFlipped
+  ],
+  updateCanvas,
+  { immediate: true, flush: 'sync' }
+)
 
 onMounted(() => {
   updateCanvas()

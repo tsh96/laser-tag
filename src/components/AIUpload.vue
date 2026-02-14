@@ -5,17 +5,20 @@
     </div>
 
     <div class="upload-zone">
-      <label class="field-label">
-        Upload a photo of a name list
+      <label class="upload-trigger">
+        <div class="upload-icon-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="camera-icon"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+        <span class="upload-text">Take Photo or Upload List</span>
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          @change="handleFileSelect"
+          class="hidden-input"
+        />
       </label>
-      <input
-        type="file"
-        accept="image/*"
-        @change="handleFileSelect"
-        aria-describedby="upload-help"
-        class="upload-input"
-      />
-      <p id="upload-help" class="form-note">Supports common image formats. Best results with a clear, well-lit image.</p>
+      <p class="form-note">Best results with a clear, well-lit image of names.</p>
     </div>
 
     <div v-if="processing" class="status-block">

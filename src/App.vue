@@ -4,20 +4,15 @@
       <div class="app-header__inner">
         <div class="app-header__row">
           <h1 class="app-title">LaserTag</h1>
-          <span class="app-badge">
-            1-bit BMP
-          </span>
         </div>
       </div>
     </header>
 
     <main class="app-main">
       <div class="app-main__grid">
+        <History ref="historyRef" @names-extracted="handleNamesExtracted" />
         <Editor @save="handleSave" ref="editorRef" />
-        <AIUpload @names-extracted="handleNamesExtracted" />
       </div>
-
-      <History ref="historyRef" />
     </main>
 
     <Toast ref="toastRef" />
@@ -27,7 +22,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Editor from './components/Editor.vue'
-import AIUpload from './components/AIUpload.vue'
 import History from './components/History.vue'
 import Toast from './components/Toast.vue'
 import { useHistory } from './composables/useHistory'
@@ -49,13 +43,18 @@ const handleSave = async ({ text, settings }: { text: string; settings: LaserSet
 }
 
 const handleNamesExtracted = async (names: string[]) => {
+  const editorSettings = editorRef.value?.settings
+  const currentSettings = editorSettings && typeof editorSettings === 'object' && 'value' in editorSettings
+    ? editorSettings.value
+    : editorSettings
+
   // Get current settings from editor
-  const settings: LaserSettings = editorRef.value ? {
-    width: editorRef.value.settings.width,
-    height: editorRef.value.settings.height,
-    padding: editorRef.value.settings.padding,
-    unit: editorRef.value.settings.unit,
-    isFlipped: editorRef.value.settings.isFlipped
+  const settings: LaserSettings = currentSettings ? {
+    width: currentSettings.width,
+    height: currentSettings.height,
+    padding: currentSettings.padding,
+    unit: currentSettings.unit,
+    isFlipped: currentSettings.isFlipped
   } : {
     width: 3,
     height: 1,

@@ -1,10 +1,31 @@
 <template>
   <section class="panel-card history-card">
     <div class="history-head">
-      <h2 class="panel-title">History</h2>
-      <span class="history-count">
-        {{ historyItems.length }} item{{ historyItems.length === 1 ? '' : 's' }}
-      </span>
+      <div class="history-head__left">
+        <h2 class="panel-title">History</h2>
+        <span class="history-count">
+          {{ historyItems.length }} item{{ historyItems.length === 1 ? '' : 's' }}
+        </span>
+      </div>
+      
+      <div class="history-head__actions">
+        <label class="camera-btn" :class="{ 'is-processing': processing }">
+          <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <div v-else class="loader loader--small"></div>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            @change="handleFileSelect"
+            class="hidden-input"
+            :disabled="processing"
+          />
+        </label>
+      </div>
+    </div>
+
+    <div v-if="uploadError" class="alert alert--error alert--center">
+      {{ uploadError }}
     </div>
 
     <div v-if="loading" class="status-block">
@@ -17,7 +38,8 @@
     </div>
 
     <div v-else-if="historyItems.length === 0" class="empty-state">
-      No history items yet. Create your first item using the editor or AI upload.
+      <p>No history items yet.</p>
+      <p class="empty-hint">Use the camera icon above to capture a list of names with AI.</p>
     </div>
 
     <div v-else class="history-list">
@@ -92,16 +114,52 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
-import { renderMiniature } from '../utils/canvas'
+import { renderMiniature, renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
-import { renderCanvas } from '../utils/canvas'
+import { extractNamesFromImage } from '../utils/gemini'
 import ConfirmDialog from './ConfirmDialog.vue'
 import type { HistoryItem } from '../types'
+
+const props = defineProps<{
+  currentSettings?: any
+}>()
+
+const emit = defineEmits<{
+  (e: 'names-extracted', names: string[]): void
+}>()
 
 const { historyItems, loading, error, updateHistoryItem, deleteHistoryItem } = useHistory()
 
 const canvasRefs = ref<Record<string, HTMLCanvasElement>>({})
 const confirmDialogRef = ref<InstanceType<typeof ConfirmDialog> | null>(null)
+
+const processing = ref(false)
+const uploadError = ref<string | null>(null)
+
+const handleFileSelect = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  
+  processing.value = true
+  uploadError.value = null
+  
+  try {
+    const names = await extractNamesFromImage(file)
+    
+    if (names.length === 0) {
+      uploadError.value = 'No names were detected in the image.'
+      return
+    }
+    
+    emit('names-extracted', names)
+    target.value = ''
+  } catch (err: any) {
+    uploadError.value = err.message || 'Failed to process image'
+  } finally {
+    processing.value = false
+  }
+}
 
 const setCanvasRef = (id: string, el: Element | null) => {
   if (el) {

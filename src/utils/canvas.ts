@@ -25,10 +25,10 @@ export function convertToPixels(value: number, unit: LaserSettings['unit']): num
  * Render text on canvas with auto-scaling
  * @param canvas - The canvas element
  * @param text - The text to render
- * @param settings - Settings object with width, height, padding, unit, isFlipped
+ * @param settings - Settings object with width, height, padding, unit
  */
 export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: LaserSettings): void {
-  const { width, height, padding, unit, isFlipped } = settings
+  const { width, height, padding, unit } = settings
 
   // Convert dimensions to pixels at 300 DPI
   const widthPx = convertToPixels(width, unit)
@@ -51,6 +51,11 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   ctx.fillRect(0, 0, paddingPx, heightPx)
 
   // Draw hatch pattern
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, paddingPx, heightPx)
+  ctx.clip()
+
   ctx.strokeStyle = '#D1D5DB'
   ctx.lineWidth = 1
   const hatchSpacing = 10
@@ -61,6 +66,8 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
     ctx.lineTo(i + heightPx, heightPx)
     ctx.stroke()
   }
+
+  ctx.restore()
 
   // Calculate engrave zone
   const engraveX = paddingPx
@@ -76,6 +83,9 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
     return
   }
 
+  // Split text into lines
+  const lines = text.split('\n')
+
   // Auto-scale text to fit
   ctx.fillStyle = '#000000'
   ctx.textAlign = 'center'
@@ -86,15 +96,21 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   let maxSize = 500
   let fontSize = maxSize
 
+  const lineHeightMultiplier = 1.2
+
   while (maxSize - minSize > 1) {
     fontSize = Math.floor((minSize + maxSize) / 2)
     ctx.font = `${fontSize}px Arial`
 
-    const metrics = ctx.measureText(text)
-    const textWidth = metrics.width
-    const textHeight = fontSize // Approximate height
+    let maxWidth = 0
+    for (const line of lines) {
+      const metrics = ctx.measureText(line)
+      maxWidth = Math.max(maxWidth, metrics.width)
+    }
 
-    if (textWidth <= safeWidth && textHeight <= safeHeight) {
+    const totalHeight = fontSize * lines.length * lineHeightMultiplier
+
+    if (maxWidth <= safeWidth && totalHeight <= safeHeight) {
       minSize = fontSize
     } else {
       maxSize = fontSize
@@ -106,17 +122,13 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
 
   // Draw text centered in engrave zone
   const textX = engraveX + engraveWidth / 2
-  const textY = engraveHeight / 2
+  const totalHeight = fontSize * lines.length * lineHeightMultiplier
+  const startY = (engraveHeight - totalHeight) / 2 + (fontSize * lineHeightMultiplier) / 2
 
-  if (isFlipped) {
-    ctx.save()
-    ctx.translate(widthPx, 0)
-    ctx.scale(-1, 1)
-    ctx.fillText(text, widthPx - textX, textY)
-    ctx.restore()
-  } else {
-    ctx.fillText(text, textX, textY)
-  }
+  lines.forEach((line, index) => {
+    const lineY = startY + (index * fontSize * lineHeightMultiplier)
+    ctx.fillText(line, textX, lineY)
+  })
 }
 
 /**
