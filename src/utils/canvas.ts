@@ -26,6 +26,7 @@ export function convertToPixels(value: number, unit: LaserSettings['unit']): num
  * @param canvas - The canvas element
  * @param text - The text to render
  * @param settings - Settings object with width, height, padding, unit
+ * @returns The rendered font size in points, or null if rendering is skipped/failed
  */
 export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: LaserSettings): number | null {
   const { width, height, padding, unit } = settings
