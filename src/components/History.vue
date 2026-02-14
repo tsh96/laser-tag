@@ -29,7 +29,7 @@
     <div class="stack-gap-md">
       <label for="gemini-api-key" class="field-label">Gemini API Key</label>
       <input id="gemini-api-key" v-model="geminiApiKeyInput" type="password" class="field-control"
-        placeholder="Paste your Gemini API key" autocomplete="off" />
+        placeholder="Paste your Gemini API key" autocomplete="new-password" spellcheck="false" />
       <div class="action-row">
         <button type="button" class="btn-primary" @click="saveGeminiApiKeySetting">
           Save API Key
@@ -134,14 +134,15 @@ const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
 const uploadError = ref<string | null>(null)
-const geminiApiKeyInput = ref(getGeminiApiKey())
+const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
 let resizeObserver: ResizeObserver | null = null
 
 const saveGeminiApiKeySetting = () => {
   saveGeminiApiKey(geminiApiKeyInput.value)
-  geminiApiKeyInput.value = getGeminiApiKey()
-  geminiApiKeyStatus.value = geminiApiKeyInput.value ? 'Gemini API key saved locally.' : 'Gemini API key removed.'
+  const storedKey = getGeminiApiKey()
+  geminiApiKeyInput.value = ''
+  geminiApiKeyStatus.value = storedKey ? 'Gemini API key saved locally.' : 'Gemini API key removed.'
 }
 
 const clearGeminiApiKeySetting = () => {

@@ -2,6 +2,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const GEMINI_API_KEY_STORAGE_KEY = 'laser-tag-gemini-api-key'
 
+class MissingGeminiApiKeyError extends Error {
+  constructor() {
+    super('Gemini API key is required')
+    this.name = 'MissingGeminiApiKeyError'
+  }
+}
+
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
     const storedApiKey = window.localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY)?.trim()
@@ -36,7 +43,7 @@ export async function extractNamesFromImage(imageFile: File): Promise<string[]> 
   try {
     const geminiApiKey = getGeminiApiKey()
     if (!geminiApiKey) {
-      throw new Error('Gemini API key is required')
+      throw new MissingGeminiApiKeyError()
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey)
@@ -79,7 +86,7 @@ If no names are found, return an empty response.`
     return names
   } catch (error) {
     console.error('Error extracting names:', error)
-    if (error instanceof Error && error.message === 'Gemini API key is required') {
+    if (error instanceof MissingGeminiApiKeyError) {
       throw new Error('Gemini API key is required. Add it in History before using AI import.')
     }
     throw new Error('Failed to extract names from image')
