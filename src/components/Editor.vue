@@ -79,8 +79,6 @@ import { generateBMP, downloadBMP } from '../utils/bmp'
 import type { HistoryItem, LaserSettings } from '../types'
 
 const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
-// Point-size threshold to avoid reactive churn from floating-point precision differences.
-const AUTO_SIZE_SYNC_EPSILON = 0.01
 
 const DEFAULT_SETTINGS: LaserSettings = {
   width: 3,
@@ -154,8 +152,11 @@ watch(
 const updateCanvas = () => {
   if (canvasRef.value) {
     const actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
-    if (settings.autoSize && typeof actualFontSize === 'number' && Math.abs(settings.fontSize - actualFontSize) > AUTO_SIZE_SYNC_EPSILON) {
-      settings.fontSize = actualFontSize
+    if (settings.autoSize && typeof actualFontSize === 'number') {
+      const roundedAutoFontSize = Math.round(actualFontSize)
+      if (settings.fontSize !== roundedAutoFontSize) {
+        settings.fontSize = roundedAutoFontSize
+      }
     }
   }
 }
