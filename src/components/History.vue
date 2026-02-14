@@ -120,6 +120,8 @@ import { useHistory } from '../composables/useHistory'
 import { renderMiniature, renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
 import { extractNamesFromImage, getGeminiApiKey, saveGeminiApiKey } from '../utils/gemini'
+import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
+import { extractNamesFromImage } from '../utils/gemini'
 import ConfirmDialog from './ConfirmDialog.vue'
 import type { HistoryItem } from '../types'
 
@@ -256,7 +258,10 @@ const exportItem = async (item: HistoryItem, overwrite: boolean) => {
   const blob = generateBMP(exportCanvas, item.settings.isFlipped)
 
   if (overwrite) {
-    downloadBMP(blob, 'output.bmp')
+    const result = await overwriteBMP(blob, 'output.bmp')
+    if (result === 'fallback') {
+      downloadBMP(blob, 'output.bmp')
+    }
   } else {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     downloadBMP(blob, `laser-tag-${item.text.replace(/\s+/g, '-')}-${timestamp}.bmp`)
