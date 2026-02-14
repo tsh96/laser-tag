@@ -26,8 +26,9 @@ export function convertToPixels(value: number, unit: LaserSettings['unit']): num
  * @param canvas - The canvas element
  * @param text - The text to render
  * @param settings - Settings object with width, height, padding, unit
+ * @returns The rendered font size in points, or null if rendering is skipped/failed
  */
-export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: LaserSettings): void {
+export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: LaserSettings): number | null {
   const { width, height, padding, unit } = settings
 
   // Convert dimensions to pixels at 300 DPI
@@ -40,7 +41,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   canvas.height = heightPx
 
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return null
 
   // Clear canvas with white background
   ctx.fillStyle = '#FFFFFF'
@@ -80,7 +81,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   const safeHeight = engraveHeight * (1 - safetyMargin * 2)
 
   if (!text || text.trim() === '') {
-    return
+    return null
   }
 
   // Split text into lines
@@ -138,6 +139,8 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
     const lineY = startY + (index * fontSize * lineHeightMultiplier)
     ctx.fillText(line, textX, lineY)
   })
+
+  return fontSize / PT_TO_PX
 }
 
 /**

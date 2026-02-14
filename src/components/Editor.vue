@@ -151,7 +151,13 @@ watch(
 
 const updateCanvas = () => {
   if (canvasRef.value) {
-    renderCanvas(canvasRef.value, text.value, settings)
+    const actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    if (settings.autoSize && typeof actualFontSize === 'number') {
+      const roundedAutoFontSize = Math.round(actualFontSize)
+      if (settings.fontSize !== roundedAutoFontSize) {
+        settings.fontSize = roundedAutoFontSize
+      }
+    }
   }
 }
 
