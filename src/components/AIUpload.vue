@@ -12,9 +12,10 @@
         type="file"
         accept="image/*"
         @change="handleFileSelect"
+        aria-describedby="upload-help"
         class="upload-input"
       />
-      <p class="form-note">Best results with a clear, well-lit image.</p>
+      <p id="upload-help" class="form-note">Supports common image formats. Best results with a clear, well-lit image.</p>
     </div>
 
     <div v-if="processing" class="status-block">
