@@ -42,7 +42,9 @@ const isLaserSettings = (value: unknown): value is LaserSettings => {
     typeof candidate.height === 'number' &&
     typeof candidate.padding === 'number' &&
     (candidate.unit === 'mm' || candidate.unit === 'cm' || candidate.unit === 'in') &&
-    typeof candidate.isFlipped === 'boolean'
+    typeof candidate.isFlipped === 'boolean' &&
+    typeof candidate.fontSize === 'number' &&
+    typeof candidate.autoSize === 'boolean'
   )
 }
 
@@ -66,7 +68,9 @@ const handleNamesExtracted = async (names: string[]) => {
       height: 1,
       padding: 0.5,
       unit: 'in',
-      isFlipped: false
+      isFlipped: false,
+      fontSize: 24,
+      autoSize: true
     }
 
   // Add each name to history

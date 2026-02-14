@@ -4,6 +4,8 @@ export interface LaserSettings {
     padding: number
     unit: 'mm' | 'cm' | 'in'
     isFlipped: boolean
+    fontSize: number
+    autoSize: boolean
 }
 
 export interface HistoryItem {

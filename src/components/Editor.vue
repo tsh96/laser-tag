@@ -30,6 +30,11 @@
           <option value="in">in</option>
         </select>
       </div>
+
+      <div>
+        <label class="field-label">Font Size (pt)</label>
+        <input v-model.number="settings.fontSize" type="number" min="1" step="1" class="field-control" :disabled="settings.autoSize" />
+      </div>
     </div>
 
     <div class="stack-gap-md">
@@ -37,7 +42,11 @@
       <textarea v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
     </div>
 
-    <div class="stack-gap-md">
+    <div class="stack-gap-md flex flex-wrap gap-x-6 gap-y-2">
+      <label class="check-wrap">
+        <input v-model="settings.autoSize" type="checkbox" class="check-input" />
+        <span class="check-label">Auto Size (Max 32pt)</span>
+      </label>
       <label class="check-wrap">
         <input v-model="settings.isFlipped" type="checkbox" class="check-input" />
         <span class="check-label">Flip Horizontally</span>
@@ -76,7 +85,9 @@ const DEFAULT_SETTINGS: LaserSettings = {
   height: 1,
   padding: 0.5,
   unit: 'in',
-  isFlipped: false
+  isFlipped: false,
+  fontSize: 24,
+  autoSize: true
 }
 
 const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
@@ -89,7 +100,9 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
     height: typeof value.height === 'number' && value.height > 0 ? value.height : DEFAULT_SETTINGS.height,
     padding: typeof value.padding === 'number' && value.padding >= 0 ? value.padding : DEFAULT_SETTINGS.padding,
     unit: isValidUnit(value.unit) ? value.unit : DEFAULT_SETTINGS.unit,
-    isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped
+    isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped,
+    fontSize: typeof value.fontSize === 'number' && value.fontSize > 0 ? value.fontSize : DEFAULT_SETTINGS.fontSize,
+    autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize
   }
 }
 
@@ -173,7 +186,9 @@ watch(
     () => settings.height,
     () => settings.padding,
     () => settings.unit,
-    () => settings.isFlipped
+    () => settings.isFlipped,
+    () => settings.fontSize,
+    () => settings.autoSize
   ],
   updateCanvas,
   { immediate: true, flush: 'sync' }

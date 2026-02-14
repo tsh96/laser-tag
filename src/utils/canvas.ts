@@ -92,32 +92,41 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   ctx.textBaseline = 'middle'
 
   // Binary search for optimal font size
-  let minSize = 1
-  let maxSize = 500
-  let fontSize = maxSize
-
+  const PT_TO_PX = 300 / 72
+  const MAX_AUTO_SIZE = 32 * PT_TO_PX
   const lineHeightMultiplier = 1.2
 
-  while (maxSize - minSize > 1) {
-    fontSize = Math.floor((minSize + maxSize) / 2)
-    ctx.font = `${fontSize}px Arial`
+  let fontSize: number
 
-    let maxWidth = 0
-    for (const line of lines) {
-      const metrics = ctx.measureText(line)
-      maxWidth = Math.max(maxWidth, metrics.width)
+  if (settings.autoSize || settings.autoSize === undefined) {
+    let low = 1
+    let high = Math.floor(MAX_AUTO_SIZE)
+    let bestSize = low
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2)
+      ctx.font = `${mid}px Arial`
+
+      let maxWidth = 0
+      for (const line of lines) {
+        const metrics = ctx.measureText(line)
+        maxWidth = Math.max(maxWidth, metrics.width)
+      }
+
+      const totalHeight = mid * lines.length * lineHeightMultiplier
+
+      if (maxWidth <= safeWidth && totalHeight <= safeHeight) {
+        bestSize = mid
+        low = mid + 1
+      } else {
+        high = mid - 1
+      }
     }
-
-    const totalHeight = fontSize * lines.length * lineHeightMultiplier
-
-    if (maxWidth <= safeWidth && totalHeight <= safeHeight) {
-      minSize = fontSize
-    } else {
-      maxSize = fontSize
-    }
+    fontSize = bestSize
+  } else {
+    fontSize = (settings.fontSize || 24) * PT_TO_PX
   }
 
-  fontSize = minSize
   ctx.font = `${fontSize}px Arial`
 
   // Draw text centered in engrave zone
