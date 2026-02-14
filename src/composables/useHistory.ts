@@ -38,8 +38,6 @@ export function useHistory() {
         loading.value = true
         historyItems.value = []
         lastVisible.value = null
-      } else {
-        loadingMore.value = true
       }
 
       error.value = null
@@ -80,14 +78,23 @@ export function useHistory() {
         throw new Error('Please sign in before saving history.')
       }
 
-      await addDoc(collection(db, 'history'), {
+      const docRef = await addDoc(collection(db, 'history'), {
         text,
         settings,
         status: 'pending',
         userId: user.uid,
         timestamp: serverTimestamp()
       })
-      await fetchHistory(user.uid, true)
+      const createdSnapshot = await getDoc(docRef)
+      const createdData = createdSnapshot.data()
+
+      historyItems.value = [{
+        id: docRef.id,
+        text: (createdData?.text as string) ?? text,
+        settings: (createdData?.settings as LaserSettings) ?? settings,
+        status: (createdData?.status as HistoryItem['status']) ?? 'pending',
+        timestamp: createdData?.timestamp ?? null
+      }, ...historyItems.value]
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -108,7 +115,11 @@ export function useHistory() {
       }
 
       await updateDoc(docRef, updates as any)
-      await fetchHistory(user.uid, true)
+      historyItems.value = historyItems.value.map(item => (
+        item.id === id
+          ? { ...item, ...updates }
+          : item
+      ))
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -129,7 +140,7 @@ export function useHistory() {
       }
 
       await deleteDoc(docRef)
-      await fetchHistory(user.uid, true)
+      historyItems.value = historyItems.value.filter(item => item.id !== id)
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -141,6 +152,7 @@ export function useHistory() {
       return
     }
 
+    loadingMore.value = true
     await fetchHistory(currentUserId.value, false)
   }
 

@@ -149,6 +149,7 @@ const uploadError = ref<string | null>(null)
 const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
 const isSettingsModalOpen = ref(false)
+const LOAD_MORE_THRESHOLD = 0.2
 let resizeObserver: ResizeObserver | null = null
 let loadMoreObserver: IntersectionObserver | null = null
 
@@ -296,11 +297,11 @@ watch([historyItems, hasMore], async () => {
   }
 
   loadMoreObserver = new IntersectionObserver((entries) => {
-    if (entries.some(entry => entry.isIntersecting)) {
+    if (!loadingMore.value && entries.some(entry => entry.isIntersecting)) {
       void loadMoreHistory()
     }
   }, {
-    threshold: 0.2
+    threshold: LOAD_MORE_THRESHOLD
   })
 
   loadMoreObserver.observe(loadMoreTriggerRef.value)
