@@ -124,3 +124,43 @@ export function downloadBMP(blob: Blob, filename: string): void {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 }
+
+let overwriteHandle: FileSystemFileHandle | null = null
+
+/**
+ * Save BMP to a fixed path when supported, asking user only the first time.
+ * Returns true when saved via File System Access API; false when fallback is needed.
+ */
+export async function overwriteBMP(blob: Blob, filename = 'output.bmp'): Promise<boolean> {
+  const pickerWindow = window as Window & {
+    showSaveFilePicker?: (options?: SaveFilePickerOptions) => Promise<FileSystemFileHandle>
+  }
+
+  if (!pickerWindow.showSaveFilePicker) {
+    return false
+  }
+
+  try {
+    if (!overwriteHandle) {
+      overwriteHandle = await pickerWindow.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'BMP image',
+          accept: { 'image/bmp': ['.bmp'] }
+        }]
+      })
+    }
+
+    const writable = await overwriteHandle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+    return true
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return true
+    }
+
+    overwriteHandle = null
+    return false
+  }
+}
