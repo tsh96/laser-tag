@@ -18,6 +18,7 @@ LaserTag PWA is a Progressive Web Application for generating 1-bit monochrome BM
 ## Key Commands
 
 ### Development
+
 ```bash
 npm install          # Install dependencies
 npm run dev         # Start development server (Vite)
@@ -26,8 +27,31 @@ npm run preview     # Preview production build
 ```
 
 ### Important Notes
+
 - Always run `npm run build` before production deployment to ensure TypeScript compilation
 - Use `npm install` (not `pnpm` or `yarn`) as the project uses npm
+
+## Tool & Skill Usage Policy (Required)
+
+For non-trivial tasks, the agent must follow a tool-first workflow and use available MCP tools and skills when relevant.
+
+### Required Workflow
+
+1. **Preflight first**: Before implementation, identify relevant MCP tools and relevant skills.
+2. **Use skills explicitly**: If a matching skill exists, read its `SKILL.md` and apply its guidance.
+3. **Use tools explicitly**: Use available tools for discovery, edits, validation, and verification rather than relying only on assumptions.
+4. **Report usage**: In the final response, include which MCP tools/skills were used and how they influenced the result.
+
+### Completion Gate
+
+- Do not finalize a non-trivial task without using at least one relevant tool and one relevant skill when available.
+- If no relevant tool or skill exists, explicitly state that and proceed with the best available approach.
+
+### Enforcement Heuristics
+
+- Prefer tool calls for: file discovery, code search, file reads, edits, error checks, tests/builds, and runtime verification.
+- Prefer skill guidance for domain-specific work (Firestore, PWA, Vite, Vue/TS, Playwright).
+- If a task is simple and atomic (e.g., one-line typo fix), tool usage can be minimal, but verification is still expected.
 
 ## Project Structure
 
@@ -50,29 +74,34 @@ npm run preview     # Preview production build
 ## Code Conventions and Style
 
 ### Vue Components
+
 - Use Vue 3 Composition API (`<script setup>`) for all components
 - Use TypeScript for type safety
 - Follow the existing pattern of reactive state management
 - Components should be self-contained and reusable
 
 ### File Naming
+
 - Vue components: PascalCase (e.g., `Editor.vue`, `AIUpload.vue`)
 - Utilities: camelCase (e.g., `canvas.js`, `bmp.js`)
 - TypeScript files: camelCase with `.ts` extension
 - Composables: camelCase with `use` prefix (e.g., `useHistory.js`)
 
 ### Styling
+
 - Use Tailwind CSS utility classes for styling
 - Follow existing Tailwind configuration in `tailwind.config.js`
 - Maintain consistent spacing and responsive design patterns
 
 ### Canvas Rendering
+
 - Always use 300 DPI for physical accuracy
 - Text must be centered within the engrave zone (not the entire tag)
 - Use binary search algorithm for optimal font sizing
 - Respect the 5% safety margin
 
 ### BMP Generation
+
 - Generate only 1-bit monochrome BMP files
 - Follow standard BMP format specifications
 - Ensure compatibility with EZCad and LightBurn laser software
@@ -81,7 +110,9 @@ npm run preview     # Preview production build
 ## Firebase Integration
 
 ### Data Structure
+
 All history items follow this structure:
+
 ```javascript
 {
   text: string,
@@ -98,6 +129,7 @@ All history items follow this structure:
 ```
 
 ### Best Practices
+
 - Use the `useHistory` composable for all Firebase operations
 - Proper cleanup of real-time listeners in component unmount
 - Query with timestamp ordering
@@ -107,6 +139,7 @@ All history items follow this structure:
 Never commit the `.env` file. Always use `.env.example` as a template.
 
 Required variables:
+
 ```env
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
@@ -120,6 +153,7 @@ VITE_GEMINI_API_KEY=
 ## Security and Boundaries
 
 ### DO NOT
+
 - Commit secrets or API keys to source code
 - Modify `.env` file (only modify `.env.example` for documentation)
 - Break the 1-bit BMP format specification
@@ -128,6 +162,7 @@ VITE_GEMINI_API_KEY=
 - Modify files in `node_modules/` or `dist/`
 
 ### DO
+
 - Validate all user input
 - Handle errors gracefully with user-friendly messages
 - Maintain HTTPS in production for PWA functionality
@@ -138,6 +173,7 @@ VITE_GEMINI_API_KEY=
 ## Testing and Validation
 
 ### Manual Testing Checklist
+
 - Test canvas rendering with different text inputs and dimensions
 - Verify BMP export produces valid 1-bit monochrome files
 - Check Firebase history synchronization works correctly
@@ -147,7 +183,9 @@ VITE_GEMINI_API_KEY=
 - Verify horizontal flip functionality
 
 ### Browser Testing
+
 Ensure compatibility with:
+
 - Chrome 90+
 - Firefox 88+
 - Safari 14+
@@ -156,18 +194,21 @@ Ensure compatibility with:
 ## Common Patterns
 
 ### Adding a New Component
+
 1. Create component in `/src/components` using Composition API
 2. Use TypeScript for props and emits
 3. Follow existing styling patterns with Tailwind CSS
 4. Import and use in `App.vue`
 
 ### Adding a New Utility
+
 1. Create utility file in `/src/utils`
 2. Export pure functions with clear parameters and return types
 3. Add JSDoc comments for complex logic
 4. Import where needed
 
 ### Modifying Canvas Rendering
+
 1. Changes should be made in `/src/utils/canvas.js`
 2. Maintain 300 DPI resolution
 3. Test with various dimensions and text inputs
@@ -176,18 +217,21 @@ Ensure compatibility with:
 ## Dependencies
 
 ### Production Dependencies
+
 - `vue`: Vue.js 3 framework
 - `firebase`: Firebase SDK for Firestore
 - `@google/generative-ai`: Gemini AI SDK
 - `vite-plugin-pwa`: PWA support
 
 ### Development Dependencies
+
 - `@vitejs/plugin-vue`: Vite plugin for Vue
 - `tailwindcss`: CSS framework
 - `typescript`: Type checking
 - `vue-tsc`: TypeScript checker for Vue
 
 ### Adding New Dependencies
+
 - Always check for security vulnerabilities before adding
 - Prefer well-maintained packages with active communities
 - Update package.json and package-lock.json
@@ -196,12 +240,14 @@ Ensure compatibility with:
 ## Documentation
 
 ### When to Update Documentation
+
 - Update `README.md` for user-facing changes
 - Update `DOCUMENTATION.md` for technical/architectural changes
 - Update `QUICK_REFERENCE.md` for new features or workflow changes
 - Update this file for new conventions or guidelines
 
 ### Documentation Style
+
 - Use clear, concise language
 - Include code examples where appropriate
 - Keep formatting consistent with existing documentation
@@ -210,21 +256,25 @@ Ensure compatibility with:
 ## Troubleshooting Common Issues
 
 ### Canvas Not Rendering
+
 - Check console for errors
 - Verify canvas element has proper dimensions
 - Ensure text is not empty
 
 ### Firebase Connection Issues
+
 - Verify environment variables are set correctly
 - Check Firestore rules in Firebase Console
 - Review browser console for CORS errors
 
 ### BMP Export Issues
+
 - Ensure canvas is fully rendered before export
 - Verify BMP file headers match specification
 - Test with laser engraving software
 
 ### AI Extraction Not Working
+
 - Verify Gemini API key is valid and has quota
 - Check image is clear and readable
 - Review network connectivity
@@ -247,11 +297,13 @@ Ensure compatibility with:
 ## Version Control
 
 ### Commit Messages
+
 - Use clear, descriptive commit messages
 - Follow conventional commits format when possible
 - Reference issue numbers when applicable
 
 ### Branch Strategy
+
 - Create feature branches from main
 - Keep changes focused and atomic
 - Write meaningful PR descriptions
