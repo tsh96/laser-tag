@@ -10,7 +10,7 @@
 
     <main class="app-main">
       <div class="app-main__grid">
-        <History ref="historyRef" @names-extracted="handleNamesExtracted" />
+        <History @names-extracted="handleNamesExtracted" />
         <Editor @save="handleSave" ref="editorRef" />
       </div>
     </main>
@@ -30,44 +30,50 @@ import type { LaserSettings } from './types'
 const { addHistoryItem } = useHistory()
 const editorRef = ref<InstanceType<typeof Editor> | null>(null)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
-const historyRef = ref<InstanceType<typeof History> | null>(null)
+
+const isLaserSettings = (value: unknown): value is LaserSettings => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.width === 'number' &&
+    typeof candidate.height === 'number' &&
+    typeof candidate.padding === 'number' &&
+    (candidate.unit === 'mm' || candidate.unit === 'cm' || candidate.unit === 'in') &&
+    typeof candidate.isFlipped === 'boolean'
+  )
+}
 
 const handleSave = async ({ text, settings }: { text: string; settings: LaserSettings }) => {
   if (!text || text.trim() === '') {
     toastRef.value?.addNotification('Please enter text before saving', 'warning')
     return
   }
-  
+
   await addHistoryItem(text, settings)
   toastRef.value?.addNotification('Saved to history!', 'success')
 }
 
 const handleNamesExtracted = async (names: string[]) => {
   const editorSettings = editorRef.value?.settings
-  const currentSettings = editorSettings && typeof editorSettings === 'object' && 'value' in editorSettings
-    ? editorSettings.value
-    : editorSettings
 
-  // Get current settings from editor
-  const settings: LaserSettings = currentSettings ? {
-    width: currentSettings.width,
-    height: currentSettings.height,
-    padding: currentSettings.padding,
-    unit: currentSettings.unit,
-    isFlipped: currentSettings.isFlipped
-  } : {
-    width: 3,
-    height: 1,
-    padding: 0.5,
-    unit: 'in',
-    isFlipped: false
-  }
-  
+  const settings: LaserSettings = isLaserSettings(editorSettings)
+    ? { ...editorSettings }
+    : {
+      width: 3,
+      height: 1,
+      padding: 0.5,
+      unit: 'in',
+      isFlipped: false
+    }
+
   // Add each name to history
   for (const name of names) {
     await addHistoryItem(name, settings)
   }
-  
+
   toastRef.value?.addNotification(`Successfully added ${names.length} names to history!`, 'success', 5000)
 }
 </script>
