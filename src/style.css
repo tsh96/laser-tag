@@ -476,6 +476,23 @@ body {
   max-width: 100%;
 }
 
+.history-tag {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #0b1122;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
 .history-preview::after {
   content: "";
   position: absolute;

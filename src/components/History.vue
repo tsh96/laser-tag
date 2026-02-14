@@ -47,6 +47,7 @@
         @keydown.space.prevent="selectItem(item)">
         <div class="history-item__layout">
           <div class="history-preview">
+            <div v-if="item.status === 'pending'" class="history-tag">Pending</div>
             <canvas :ref="el => setCanvasRef(item.id, el)" class="history-canvas" />
             <div class="history-actions">
               <button @click.stop="exportItem(item, false)" class="history-icon-btn" type="button"
@@ -196,7 +197,7 @@ const formatTimestamp = (timestamp: any) => {
 
 const exportItem = async (item: HistoryItem, overwrite: boolean) => {
   // Mark as exported
-  await updateHistoryItem(item.id, { status: 'exported' } as any)
+  await updateHistoryItem(item.id, { status: 'exported' })
 
   // Generate BMP
   const exportCanvas = document.createElement('canvas')

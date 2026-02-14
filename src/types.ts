@@ -12,7 +12,8 @@ export interface HistoryItem {
     id: string
     text: string
     settings: LaserSettings
-    timestamp: string
+    status: 'pending' | 'exported'
+    timestamp: any
 }
 
 export interface Notification {
