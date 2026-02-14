@@ -55,13 +55,14 @@ export function useHistory() {
         throw new Error('Please sign in before saving history.')
       }
 
-      await addDoc(collection(db, 'history'), {
+      const docRef = await addDoc(collection(db, 'history'), {
         text,
         settings,
         status: 'pending',
         userId: user.uid,
         timestamp: serverTimestamp()
       })
+      return docRef.id
     } catch (err: any) {
       error.value = err.message
       throw err

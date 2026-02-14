@@ -1,8 +1,12 @@
 <template>
   <section class="panel-card editor-card">
     <div class="panel-head">
-      <div>
+      <div class="flex items-center justify-between w-full">
         <h2 class="panel-title">Editor</h2>
+        <button v-if="currentHistoryId" @click="resetEditor"
+          class="text-xs font-bold text-accent hover:text-white transition-colors" type="button">
+          NEW TAG
+        </button>
       </div>
     </div>
 
@@ -81,7 +85,7 @@
           <polyline points="17 21 17 13 7 13 7 21" />
           <polyline points="7 3 7 8 15 8" />
         </svg>
-        Save to History
+        {{ currentHistoryId ? 'Save as New' : 'Save to History' }}
       </button>
       <button @click="exportBMP" class="btn-primary action-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -98,9 +102,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { useStorage, watchDebounced } from '@vueuse/core'
 import { renderCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP } from '../utils/bmp'
+import { useHistory } from '../composables/useHistory'
 import type { HistoryItem, LaserSettings } from '../types'
 
 const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
@@ -135,6 +140,8 @@ const emit = defineEmits<{
   (e: 'save', payload: { text: string; settings: LaserSettings }): void
 }>()
 
+const { updateHistoryItem } = useHistory()
+const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 
@@ -206,9 +213,33 @@ const exportBMP = () => {
 }
 
 const loadHistoryItem = (item: HistoryItem) => {
+  currentHistoryId.value = item.id
   text.value = item.text
   Object.assign(settings, sanitizeSettings(item.settings))
 }
+
+const resetEditor = () => {
+  currentHistoryId.value = null
+  text.value = 'New Tag'
+  // Keep current settings but stop editing history
+}
+
+watchDebounced(
+  [text, settings],
+  async () => {
+    if (currentHistoryId.value) {
+      try {
+        await updateHistoryItem(currentHistoryId.value, {
+          text: text.value,
+          settings: { ...settings }
+        })
+      } catch (err) {
+        console.error('Auto-save failed:', err)
+      }
+    }
+  },
+  { deep: true, debounce: 1000 }
+)
 
 watch(
   [
@@ -231,6 +262,8 @@ onMounted(() => {
 
 defineExpose({
   settings,
-  loadHistoryItem
+  currentHistoryId,
+  loadHistoryItem,
+  resetEditor
 })
 </script>

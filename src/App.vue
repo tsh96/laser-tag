@@ -118,7 +118,10 @@ const handleSave = async ({ text, settings }: { text: string; settings: LaserSet
     return
   }
 
-  await addHistoryItem(text, settings)
+  const id = await addHistoryItem(text, settings)
+  if (id && editorRef.value) {
+    editorRef.value.currentHistoryId = id
+  }
   toastRef.value?.addNotification('Saved to history!', 'success')
 }
 
