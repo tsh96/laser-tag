@@ -30,9 +30,7 @@ body {
     Segoe UI,
     Roboto,
     sans-serif;
-  background:
-    radial-gradient(1200px 600px at 0% -20%, #1b2b58 0%, transparent 60%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -49,8 +47,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  backdrop-filter: blur(10px);
-  background: rgba(11, 16, 32, 0.85);
+  backdrop-filter: blur(8px);
+  background: rgba(11, 16, 32, 0.9);
   border-bottom: 1px solid var(--border);
 }
 
@@ -62,7 +60,7 @@ body {
 }
 
 .app-header__inner {
-  padding: 1rem 0;
+  padding: 0.8rem 0;
 }
 
 .app-header__row {
@@ -91,15 +89,8 @@ body {
   color: #b8f0ff;
 }
 
-.app-subtitle {
-  margin: 0.55rem 0 0;
-  max-width: 48rem;
-  font-size: 0.97rem;
-  color: var(--text-muted);
-}
-
 .app-main {
-  padding: 1.1rem 0 1.75rem;
+  padding: 0.95rem 0 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -112,23 +103,10 @@ body {
   gap: 1rem;
 }
 
-.app-footer {
-  border-top: 1px solid var(--border);
-  padding: 1rem 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  text-align: center;
-}
-
 .panel-card {
   border: 1px solid var(--border);
-  border-radius: 16px;
-  background: linear-gradient(
-    180deg,
-    rgba(21, 31, 54, 0.95),
-    rgba(16, 24, 45, 0.92)
-  );
-  box-shadow: 0 16px 36px -24px rgba(0, 0, 0, 0.75);
+  border-radius: 14px;
+  background: rgba(16, 24, 45, 0.9);
   padding: 1rem;
 }
 
@@ -389,29 +367,6 @@ body {
   text-align: center;
 }
 
-.tips-box {
-  margin-top: 0.95rem;
-  padding: 0.9rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(8, 13, 24, 0.56);
-  color: #cdd7ef;
-  font-size: 0.9rem;
-}
-
-.tips-title {
-  margin: 0 0 0.5rem;
-  font-weight: 700;
-  color: #f0f6ff;
-}
-
-.tips-box ul {
-  margin: 0;
-  padding-left: 1rem;
-  display: grid;
-  gap: 0.3rem;
-}
-
 .history-head {
   display: flex;
   align-items: center;
@@ -655,6 +610,12 @@ body {
   .history-actions,
   .dialog-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .app-badge {
+    display: none;
   }
 }
 
