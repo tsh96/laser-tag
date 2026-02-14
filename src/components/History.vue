@@ -9,6 +9,14 @@
       </div>
 
       <div class="history-head__actions">
+        <button type="button" class="camera-btn" @click="openSettingsModal" aria-label="Open settings" title="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
         <label class="camera-btn" :class="{ 'is-processing': processing }">
           <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -24,22 +32,6 @@
 
     <div v-if="uploadError" class="alert alert--error alert--center">
       {{ uploadError }}
-    </div>
-
-    <div class="stack-gap-md">
-      <label for="gemini-api-key" class="field-label">Gemini API Key</label>
-      <input id="gemini-api-key" v-model="geminiApiKeyInput" type="password" class="field-control"
-        placeholder="Paste your Gemini API key" autocomplete="new-password" spellcheck="false" />
-      <div class="action-row">
-        <button type="button" class="btn-primary" @click="saveGeminiApiKeySetting">
-          Save API Key
-        </button>
-        <button type="button" class="btn-secondary btn-secondary--alt" @click="clearGeminiApiKeySetting">
-          Clear
-        </button>
-      </div>
-      <p class="form-note">Stored only in this browser (localStorage).</p>
-      <p v-if="geminiApiKeyStatus" class="form-note">{{ geminiApiKeyStatus }}</p>
     </div>
 
     <div v-if="loading" class="status-block">
@@ -102,6 +94,22 @@
       </div>
     </div>
 
+    <div v-if="isSettingsModalOpen" class="dialog-overlay" @click.self="closeSettingsModal">
+      <div class="dialog-panel" role="dialog" aria-modal="true" aria-labelledby="history-settings-title">
+        <h3 id="history-settings-title" class="dialog-title">Settings</h3>
+        <label for="gemini-api-key" class="field-label">Gemini API Key</label>
+        <input id="gemini-api-key" v-model="geminiApiKeyInput" type="password" class="field-control"
+          placeholder="Paste your Gemini API key" autocomplete="new-password" spellcheck="false" />
+        <p class="form-note">Stored only in this browser (localStorage).</p>
+        <p v-if="geminiApiKeyStatus" class="form-note">{{ geminiApiKeyStatus }}</p>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-cancel" @click="closeSettingsModal">Close</button>
+          <button type="button" class="btn-secondary btn-secondary--alt" @click="clearGeminiApiKeySetting">Clear</button>
+          <button type="button" class="btn-primary" @click="saveGeminiApiKeySetting">Save API Key</button>
+        </div>
+      </div>
+    </div>
+
     <ConfirmDialog ref="confirmDialogRef" />
   </section>
 </template>
@@ -136,7 +144,18 @@ const processing = ref(false)
 const uploadError = ref<string | null>(null)
 const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
+const isSettingsModalOpen = ref(false)
 let resizeObserver: ResizeObserver | null = null
+
+const openSettingsModal = () => {
+  isSettingsModalOpen.value = true
+  geminiApiKeyInput.value = ''
+  geminiApiKeyStatus.value = null
+}
+
+const closeSettingsModal = () => {
+  isSettingsModalOpen.value = false
+}
 
 const saveGeminiApiKeySetting = () => {
   saveGeminiApiKey(geminiApiKeyInput.value)

@@ -364,6 +364,12 @@ body {
   gap: 0.8rem;
 }
 
+.history-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .camera-btn {
   display: flex;
   align-items: center;
