@@ -19,17 +19,32 @@ onAuthStateChanged(auth, (nextUser) => {
 
 const signIn = async (email: string, password: string) => {
   authError.value = null
-  await signInWithEmailAndPassword(auth, email, password)
+  try {
+    await signInWithEmailAndPassword(auth, email, password)
+  } catch (err: any) {
+    authError.value = err?.message ?? 'Failed to sign in.'
+    throw err
+  }
 }
 
 const signUp = async (email: string, password: string) => {
   authError.value = null
-  await createUserWithEmailAndPassword(auth, email, password)
+  try {
+    await createUserWithEmailAndPassword(auth, email, password)
+  } catch (err: any) {
+    authError.value = err?.message ?? 'Failed to create account.'
+    throw err
+  }
 }
 
 const logOut = async () => {
   authError.value = null
-  await signOut(auth)
+  try {
+    await signOut(auth)
+  } catch (err: any) {
+    authError.value = err?.message ?? 'Failed to sign out.'
+    throw err
+  }
 }
 
 export function useAuth() {

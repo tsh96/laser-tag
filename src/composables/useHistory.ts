@@ -5,6 +5,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
   query,
   orderBy,
   where,
@@ -69,11 +70,17 @@ export function useHistory() {
 
   const updateHistoryItem = async (id: string, updates: Partial<HistoryItem>) => {
     try {
-      if (!auth.currentUser) {
+      const user = auth.currentUser
+      if (!user) {
         throw new Error('Please sign in before updating history.')
       }
 
       const docRef = doc(db, 'history', id)
+      const docSnapshot = await getDoc(docRef)
+      if (!docSnapshot.exists() || docSnapshot.data()?.userId !== user.uid) {
+        throw new Error('You do not have permission to update this history item.')
+      }
+
       await updateDoc(docRef, updates as any)
     } catch (err: any) {
       error.value = err.message
@@ -83,11 +90,18 @@ export function useHistory() {
 
   const deleteHistoryItem = async (id: string) => {
     try {
-      if (!auth.currentUser) {
+      const user = auth.currentUser
+      if (!user) {
         throw new Error('Please sign in before deleting history.')
       }
 
-      await deleteDoc(doc(db, 'history', id))
+      const docRef = doc(db, 'history', id)
+      const docSnapshot = await getDoc(docRef)
+      if (!docSnapshot.exists() || docSnapshot.data()?.userId !== user.uid) {
+        throw new Error('You do not have permission to delete this history item.')
+      }
+
+      await deleteDoc(docRef)
     } catch (err: any) {
       error.value = err.message
       throw err

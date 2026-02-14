@@ -152,7 +152,11 @@ const handleSignUp = async () => {
 
 const handleSignOut = async () => {
   authMessage.value = null
-  await logOut()
+  try {
+    await logOut()
+  } catch (err: any) {
+    authMessage.value = getAuthErrorMessage(err)
+  }
 }
 
 const handleNamesExtracted = async (names: string[]) => {
