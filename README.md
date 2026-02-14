@@ -61,4 +61,18 @@ npm run dev
 npm run build
 ```
 
+## Deploy to GitHub Pages
+
+1. In your repository, go to **Settings → Secrets and variables → Actions**.
+2. Add these repository secrets (same names as the environment variables):
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_GEMINI_API_KEY`
+3. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+4. Push to `main` (or run the workflow manually) to build and deploy.
+
 See full documentation in the README for detailed setup and usage instructions.
