@@ -1,7 +1,7 @@
 export interface TextSpan {
     text: string
     fontFamily?: string
-    fontSize?: number
+    fontSize: number
     fontWeight?: 'normal' | 'bold'
     fontStyle?: 'normal' | 'italic'
     textDecoration?: 'none' | 'underline' | 'line-through'

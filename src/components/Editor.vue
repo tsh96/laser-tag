@@ -151,7 +151,6 @@ const { addHistoryItem, updateHistoryItem } = useHistory()
 const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
-const richText = ref<RichText>({ spans: [{ text: 'Sample Text' }] })
 const isLoading = ref(false)
 const useRichTextMode = computed({
   get: () => settings.useRichTextMode,
@@ -179,6 +178,7 @@ const storedSettings = useStorage<LaserSettings>(
 )
 
 const settings = reactive<LaserSettings>(sanitizeSettings(storedSettings.value))
+const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.fontSize }] })
 
 watch(
   settings,
@@ -251,7 +251,7 @@ const loadHistoryItem = (item: HistoryItem) => {
     settings.useRichTextMode = true
   } else {
     text.value = item.text
-    richText.value = { spans: [{ text: item.text }] }
+    richText.value = { spans: [{ text: item.text, fontSize: settings.fontSize }] }
     settings.useRichTextMode = false
   }
   Object.assign(settings, sanitizeSettings(item.settings))
@@ -298,7 +298,7 @@ watch(
     if (isLoading.value) return
     if (newMode) {
       // Switching to rich text mode - convert plain text to rich text
-      richText.value = { spans: [{ text: text.value }] }
+      richText.value = { spans: [{ text: text.value, fontSize: settings.fontSize }] }
     } else {
       // Switching to plain text mode - convert rich text to plain text
       text.value = richText.value.spans.map(span => span.text).join('')
