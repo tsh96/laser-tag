@@ -56,23 +56,13 @@
             <div v-if="item.settings?.isFlipped" class="history-tag history-tag--flipped">Flipped</div>
             <canvas :ref="el => setCanvasRef(item.id, el)" class="history-canvas" />
             <div class="history-actions">
-              <button @click.stop="exportItem(item, false)" class="history-icon-btn" type="button"
+              <button @click.stop="exportItem(item, true)" class="history-icon-btn" type="button"
                 title="Export as a new file" aria-label="Export as a new file">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              </button>
-              <button @click.stop="exportItem(item, true)" class="history-icon-btn history-icon-btn--alt" type="button"
-                title="Export and overwrite output.bmp" aria-label="Export and overwrite output dot bmp">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 12a9 9 0 0 1 15.3-6.36L21 8" />
-                  <path d="M21 3v5h-5" />
-                  <path d="M21 12a9 9 0 0 1-15.3 6.36L3 16" />
-                  <path d="M3 21v-5h5" />
                 </svg>
               </button>
               <button @click.stop="confirmDelete(item.id)" class="history-icon-btn history-icon-btn--danger"
