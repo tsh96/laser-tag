@@ -1,5 +1,13 @@
 import type { LaserSettings, RichText, TextSpan } from '../types'
 
+// Constants
+const DPI = 300
+const PT_TO_PX = DPI / 72
+const MAX_AUTO_SIZE_PT = 32
+const SAFETY_MARGIN = 0.05
+const LINE_HEIGHT_MULTIPLIER = 1.2
+const HATCH_SPACING = 10
+
 /**
  * Convert units to pixels at 300 DPI
  * @param value - The value in the specified unit
@@ -7,8 +15,6 @@ import type { LaserSettings, RichText, TextSpan } from '../types'
  * @returns Value in pixels at 300 DPI
  */
 export function convertToPixels(value: number, unit: LaserSettings['unit']): number {
-  const DPI = 300
-
   switch (unit) {
     case 'mm':
       return (value / 25.4) * DPI
@@ -76,9 +82,8 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   const engraveHeight = heightPx
 
   // Apply 5% safety margin
-  const safetyMargin = 0.05
-  const safeWidth = engraveWidth * (1 - safetyMargin * 2)
-  const safeHeight = engraveHeight * (1 - safetyMargin * 2)
+  const safeWidth = engraveWidth * (1 - SAFETY_MARGIN * 2)
+  const safeHeight = engraveHeight * (1 - SAFETY_MARGIN * 2)
 
   if (!text || text.trim() === '') {
     return null
@@ -93,9 +98,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   ctx.textBaseline = 'middle'
 
   // Binary search for optimal font size
-  const PT_TO_PX = 300 / 72
-  const MAX_AUTO_SIZE = 32 * PT_TO_PX
-  const lineHeightMultiplier = 1.2
+  const MAX_AUTO_SIZE = MAX_AUTO_SIZE_PT * PT_TO_PX
 
   let fontSize: number
 
@@ -114,7 +117,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
         maxWidth = Math.max(maxWidth, metrics.width)
       }
 
-      const totalHeight = mid * lines.length * lineHeightMultiplier
+      const totalHeight = mid * lines.length * LINE_HEIGHT_MULTIPLIER
 
       if (maxWidth <= safeWidth && totalHeight <= safeHeight) {
         bestSize = mid
@@ -132,11 +135,11 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
 
   // Draw text centered in engrave zone
   const textX = engraveX + engraveWidth / 2
-  const totalHeight = fontSize * lines.length * lineHeightMultiplier
-  const startY = (engraveHeight - totalHeight) / 2 + (fontSize * lineHeightMultiplier) / 2
+  const totalHeight = fontSize * lines.length * LINE_HEIGHT_MULTIPLIER
+  const startY = (engraveHeight - totalHeight) / 2 + (fontSize * LINE_HEIGHT_MULTIPLIER) / 2
 
   lines.forEach((line, index) => {
-    const lineY = startY + (index * fontSize * lineHeightMultiplier)
+    const lineY = startY + (index * fontSize * LINE_HEIGHT_MULTIPLIER)
     ctx.fillText(line, textX, lineY)
   })
 
@@ -181,9 +184,8 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
 
   ctx.strokeStyle = '#D1D5DB'
   ctx.lineWidth = 1
-  const hatchSpacing = 10
 
-  for (let i = -heightPx; i < paddingPx; i += hatchSpacing) {
+  for (let i = -heightPx; i < paddingPx; i += HATCH_SPACING) {
     ctx.beginPath()
     ctx.moveTo(i, 0)
     ctx.lineTo(i + heightPx, heightPx)
@@ -198,17 +200,14 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
   const engraveHeight = heightPx
 
   // Apply 5% safety margin
-  const safetyMargin = 0.05
-  const safeWidth = engraveWidth * (1 - safetyMargin * 2)
-  const safeHeight = engraveHeight * (1 - safetyMargin * 2)
+  const safeWidth = engraveWidth * (1 - SAFETY_MARGIN * 2)
+  const safeHeight = engraveHeight * (1 - SAFETY_MARGIN * 2)
 
   if (!richText || !richText.spans || richText.spans.length === 0) {
     return null
   }
 
-  const PT_TO_PX = 300 / 72
-  const MAX_AUTO_SIZE = 32 * PT_TO_PX
-  const lineHeightMultiplier = 1.2
+  const MAX_AUTO_SIZE = MAX_AUTO_SIZE_PT * PT_TO_PX
 
   // Group spans into lines based on newlines
   const lines: TextSpan[][] = [[]]
@@ -254,7 +253,7 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
         }
 
         maxWidth = Math.max(maxWidth, lineWidth)
-        maxHeight += lineHeight * lineHeightMultiplier
+        maxHeight += lineHeight * LINE_HEIGHT_MULTIPLIER
       }
 
       if (maxWidth <= safeWidth && maxHeight <= safeHeight) {
@@ -279,14 +278,14 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
       lineHeight = Math.max(lineHeight, fontSize)
     }
     lineHeights.push(lineHeight)
-    totalHeight += lineHeight * lineHeightMultiplier
+    totalHeight += lineHeight * LINE_HEIGHT_MULTIPLIER
   }
 
   ctx.fillStyle = '#000000'
   ctx.textBaseline = 'middle'
 
   const textX = engraveX + engraveWidth / 2
-  const startY = (engraveHeight - totalHeight) / 2 + (lineHeights[0] * lineHeightMultiplier) / 2
+  const startY = (engraveHeight - totalHeight) / 2 + (lineHeights[0] * LINE_HEIGHT_MULTIPLIER) / 2
 
   let currentY = startY
 
@@ -337,7 +336,7 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
       currentX += metrics.width
     }
 
-    currentY += lineHeight * lineHeightMultiplier
+    currentY += lineHeight * LINE_HEIGHT_MULTIPLIER
   }
 
   // Return average font size

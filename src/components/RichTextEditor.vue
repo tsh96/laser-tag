@@ -98,6 +98,10 @@
 import { ref, watch, onMounted, nextTick } from 'vue'
 import type { RichText, TextSpan } from '../types'
 
+// Constants
+const PX_TO_PT_RATIO = 1.33
+const TEMP_FONT_SIZE_MARKER = '7'
+
 interface Props {
   modelValue: RichText
   placeholder?: string
@@ -116,6 +120,8 @@ const currentFontFamily = ref('Arial')
 const currentFontSize = ref(24)
 const fontSizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72]
 
+// NOTE: Using document.execCommand() which is deprecated but still widely supported.
+// For production, consider migrating to modern Selection API or a library like Lexical/ProseMirror.
 const toggleFormat = (format: 'bold' | 'italic' | 'underline' | 'strikethrough') => {
   const command = format === 'strikethrough' ? 'strikeThrough' : format
   document.execCommand(command, false)
@@ -135,9 +141,9 @@ const applyFontFamily = () => {
 
 const applyFontSize = () => {
   // Convert pt to px for HTML (approximate conversion)
-  const pxSize = Math.round(currentFontSize.value * 1.33)
-  document.execCommand('fontSize', false, '7') // Use a size we can replace
-  const fontElements = editorRef.value?.querySelectorAll('font[size="7"]')
+  const pxSize = Math.round(currentFontSize.value * PX_TO_PT_RATIO)
+  document.execCommand('fontSize', false, TEMP_FONT_SIZE_MARKER) // Use temporary marker for replacement
+  const fontElements = editorRef.value?.querySelectorAll(`font[size="${TEMP_FONT_SIZE_MARKER}"]`)
   fontElements?.forEach(el => {
     const span = document.createElement('span')
     span.style.fontSize = `${pxSize}px`
@@ -224,7 +230,7 @@ const parseEditorContent = (): RichText => {
       }
       if (computedStyle.fontSize) {
         const pxSize = parseInt(computedStyle.fontSize)
-        style.fontSize = Math.round(pxSize / 1.33) // Convert px to pt
+        style.fontSize = Math.round(pxSize / PX_TO_PT_RATIO) // Convert px to pt
       }
 
       styleStack.push(style)
@@ -260,7 +266,7 @@ const renderRichText = (richText: RichText) => {
       style += `font-family: ${span.fontFamily};`
     }
     if (span.fontSize) {
-      style += `font-size: ${Math.round(span.fontSize * 1.33)}px;`
+      style += `font-size: ${Math.round(span.fontSize * PX_TO_PT_RATIO)}px;`
     }
 
     let opening = ''

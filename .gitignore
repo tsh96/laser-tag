@@ -34,3 +34,6 @@ dev-dist
 *.sw.js
 sw.js
 workbox-*.js
+
+# Demo screenshots
+demo-*.png
