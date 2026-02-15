@@ -116,7 +116,7 @@ const updateStandaloneMode = () => {
     Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
 }
 
-const canInstallApp = computed(() => !isStandalone.value)
+const canInstallApp = computed(() => !isStandalone.value && deferredInstallPrompt.value !== null)
 
 const handleBeforeInstallPrompt = (event: Event) => {
   event.preventDefault()
@@ -134,8 +134,8 @@ const handleInstallApp = async () => {
     await deferredInstallPrompt.value.prompt()
     const { outcome } = await deferredInstallPrompt.value.userChoice
     deferredInstallPrompt.value = null
+    updateStandaloneMode()
     if (outcome === 'accepted') {
-      updateStandaloneMode()
       return
     }
   }
