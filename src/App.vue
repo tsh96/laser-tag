@@ -7,6 +7,14 @@
             <span class="app-logo">⚡</span>
             <h1 class="app-title">LaserTag</h1>
           </div>
+          <button
+            v-if="canInstallApp"
+            class="app-badge"
+            type="button"
+            @click="handleInstallApp"
+          >
+            Install app
+          </button>
           <div v-if="user" class="app-header__user">
             <div class="user-info">
               <span class="app-user-label">USER</span>
@@ -78,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import Editor from './components/Editor.vue'
 import History from './components/History.vue'
 import Toast from './components/Toast.vue'
@@ -94,6 +102,57 @@ const email = ref('')
 const password = ref('')
 const authBusy = ref(false)
 const authMessage = ref<string | null>(null)
+const deferredInstallPrompt = ref<BeforeInstallPromptEvent | null>(null)
+const isStandalone = ref(false)
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
+}
+
+const updateStandaloneMode = () => {
+  isStandalone.value =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+}
+
+const canInstallApp = computed(() => !isStandalone.value)
+
+const handleBeforeInstallPrompt = (event: Event) => {
+  event.preventDefault()
+  deferredInstallPrompt.value = event as BeforeInstallPromptEvent
+}
+
+const handleAppInstalled = () => {
+  deferredInstallPrompt.value = null
+  updateStandaloneMode()
+  toastRef.value?.addNotification('LaserTag installed successfully!', 'success')
+}
+
+const handleInstallApp = async () => {
+  if (deferredInstallPrompt.value) {
+    await deferredInstallPrompt.value.prompt()
+    const { outcome } = await deferredInstallPrompt.value.userChoice
+    deferredInstallPrompt.value = null
+    if (outcome === 'accepted') {
+      updateStandaloneMode()
+      return
+    }
+  }
+
+  toastRef.value?.addNotification('Use your browser menu to install this app.', 'info')
+}
+
+onMounted(() => {
+  updateStandaloneMode()
+  window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  window.addEventListener('appinstalled', handleAppInstalled)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  window.removeEventListener('appinstalled', handleAppInstalled)
+})
 
 const isLaserSettings = (value: unknown): value is LaserSettings => {
   if (!value || typeof value !== 'object') {
