@@ -54,7 +54,8 @@
       <div class="flex items-center justify-between">
         <label class="field-label">Text</label>
         <label class="check-wrap">
-          <input v-model="useRichTextMode" type="checkbox" class="check-input" />
+          <input v-model="useRichTextMode" type="checkbox" class="check-input"
+            @change="triggerRichTextMode(($event.target as HTMLInputElement).checked)" />
           <span class="check-label">Rich Text Mode</span>
         </label>
       </div>
@@ -178,7 +179,7 @@ const storedSettings = useStorage<LaserSettings>(
 )
 
 const settings = reactive<LaserSettings>(sanitizeSettings(storedSettings.value))
-const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.fontSize }] })
+const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.fontSize, fontFamily: 'Arial' }] })
 
 watch(
   settings,
@@ -251,7 +252,7 @@ const loadHistoryItem = (item: HistoryItem) => {
     settings.useRichTextMode = true
   } else {
     text.value = item.text
-    richText.value = { spans: [{ text: item.text, fontSize: settings.fontSize }] }
+    richText.value = { spans: [{ text: item.text, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
     settings.useRichTextMode = false
   }
   Object.assign(settings, sanitizeSettings(item.settings))
@@ -292,38 +293,35 @@ watchDebounced(
   { deep: true, debounce: 1000 }
 )
 
-watch(
-  useRichTextMode,
-  async (newMode) => {
-    if (isLoading.value) return
-    if (newMode) {
-      // Switching to rich text mode - convert plain text to rich text
-      richText.value = { spans: [{ text: text.value, fontSize: settings.fontSize }] }
-    } else {
-      // Switching to plain text mode - convert rich text to plain text
-      text.value = richText.value.spans.map(span => span.text).join('')
-    }
+async function triggerRichTextMode(newMode: boolean) {
+  if (isLoading.value) return
+  if (newMode) {
+    // Switching to rich text mode - convert plain text to rich text
+    richText.value = { spans: [{ text: text.value, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
+  } else {
+    // Switching to plain text mode - convert rich text to plain text
+    text.value = richText.value.spans.map(span => span.text).join('')
+  }
 
-    // Trigger immediate auto-save when mode changes
-    if (currentHistoryId.value) {
-      try {
-        const updates: any = {
-          text: text.value,
-          settings: { ...settings }
-        }
-        if (newMode) {
-          updates.richText = richText.value
-        } else {
-          // When switching to plain text mode, delete the richText field
-          updates.richText = deleteField()
-        }
-        await updateHistoryItem(currentHistoryId.value, updates)
-      } catch (err) {
-        console.error('Auto-save failed:', err)
+  // Trigger immediate auto-save when mode changes
+  if (currentHistoryId.value) {
+    try {
+      const updates: any = {
+        text: text.value,
+        settings: { ...settings }
       }
+      if (newMode) {
+        updates.richText = richText.value
+      } else {
+        // When switching to plain text mode, delete the richText field
+        updates.richText = deleteField()
+      }
+      await updateHistoryItem(currentHistoryId.value, updates)
+    } catch (err) {
+      console.error('Auto-save failed:', err)
     }
   }
-)
+}
 
 watch(
   richText,
