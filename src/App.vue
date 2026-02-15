@@ -228,7 +228,8 @@ const handleNamesExtracted = async (names: string[]) => {
       unit: 'in',
       isFlipped: false,
       fontSize: 24,
-      autoSize: true
+      autoSize: true,
+      useRichTextMode: false
     }
 
   // Add each name to history
@@ -241,6 +242,5 @@ const handleNamesExtracted = async (names: string[]) => {
 
 const handleHistorySelected = (item: HistoryItem) => {
   editorRef.value?.loadHistoryItem(item)
-  toastRef.value?.addNotification('Loaded history item into editor', 'info', 2000)
 }
 </script>
