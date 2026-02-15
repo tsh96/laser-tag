@@ -3,10 +3,6 @@
     <div class="panel-head">
       <div class="flex items-center justify-between w-full">
         <h2 class="panel-title">Editor</h2>
-        <button v-if="currentHistoryId" @click="resetEditor"
-          class="text-xs font-bold text-accent hover:text-white transition-colors" type="button">
-          NEW TAG
-        </button>
       </div>
     </div>
 
@@ -48,15 +44,23 @@
         <label class="field-label">Font Size</label>
         <div class="input-with-unit">
           <input v-model.number="settings.fontSize" type="number" min="1" step="1" class="field-control"
-            :disabled="settings.autoSize" />
+            :disabled="settings.autoSize || useRichTextMode" />
           <span class="input-unit">pt</span>
         </div>
       </div>
     </div>
 
     <div class="stack-gap-md">
-      <label class="field-label">Text</label>
-      <textarea v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
+      <div class="flex items-center justify-between">
+        <label class="field-label">Text</label>
+        <label class="check-wrap">
+          <input v-model="useRichTextMode" type="checkbox" class="check-input"
+            @change="triggerRichTextMode(($event.target as HTMLInputElement).checked)" />
+          <span class="check-label">Rich Text Mode</span>
+        </label>
+      </div>
+      <RichTextEditor v-if="useRichTextMode" v-model="richText" placeholder="Enter text to engrave" />
+      <textarea v-else v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
     </div>
 
     <div class="stack-gap-md flex flex-wrap gap-x-6 gap-y-2">
@@ -101,12 +105,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { useStorage, watchDebounced } from '@vueuse/core'
-import { renderCanvas } from '../utils/canvas'
+import { renderCanvas, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
+import { deleteField } from 'firebase/firestore'
 import { useHistory } from '../composables/useHistory'
-import type { HistoryItem, LaserSettings } from '../types'
+import RichTextEditor from './RichTextEditor.vue'
+import type { HistoryItem, LaserSettings, RichText } from '../types'
 
 const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
 
@@ -117,7 +123,8 @@ const DEFAULT_SETTINGS: LaserSettings = {
   unit: 'in',
   isFlipped: false,
   fontSize: 24,
-  autoSize: true
+  autoSize: true,
+  useRichTextMode: true
 }
 
 const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
@@ -132,18 +139,22 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
     unit: isValidUnit(value.unit) ? value.unit : DEFAULT_SETTINGS.unit,
     isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped,
     fontSize: typeof value.fontSize === 'number' && value.fontSize > 0 ? value.fontSize : DEFAULT_SETTINGS.fontSize,
-    autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize
+    autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize,
+    useRichTextMode: typeof value.useRichTextMode === 'boolean' ? value.useRichTextMode : DEFAULT_SETTINGS.useRichTextMode
   }
 }
 
-const emit = defineEmits<{
-  (e: 'save', payload: { text: string; settings: LaserSettings }): void
-}>()
-
-const { updateHistoryItem } = useHistory()
+const { addHistoryItem, updateHistoryItem } = useHistory()
 const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
+const isLoading = ref(false)
+const useRichTextMode = computed({
+  get: () => settings.useRichTextMode,
+  set: (value: boolean) => {
+    settings.useRichTextMode = value
+  }
+})
 
 const storedSettings = useStorage<LaserSettings>(
   SETTINGS_STORAGE_KEY,
@@ -164,6 +175,7 @@ const storedSettings = useStorage<LaserSettings>(
 )
 
 const settings = reactive<LaserSettings>(sanitizeSettings(storedSettings.value))
+const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.fontSize, fontFamily: 'Arial' }] })
 
 watch(
   settings,
@@ -183,7 +195,14 @@ watch(
 
 const updateCanvas = () => {
   if (canvasRef.value) {
-    const actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    let actualFontSize: number | null = null
+
+    if (useRichTextMode.value) {
+      actualFontSize = renderRichTextCanvas(canvasRef.value, richText.value, settings)
+    } else {
+      actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    }
+
     if (settings.autoSize && typeof actualFontSize === 'number') {
       const roundedAutoFontSize = Math.round(actualFontSize)
       if (settings.fontSize !== roundedAutoFontSize) {
@@ -194,17 +213,18 @@ const updateCanvas = () => {
 }
 
 const saveToHistory = () => {
-  emit('save', {
-    text: text.value,
-    settings: { ...settings }
-  })
+  addHistoryItem(text.value, settings, useRichTextMode.value ? richText.value : undefined)
 }
 
 const exportBMP = async () => {
   if (canvasRef.value) {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
-    renderCanvas(exportCanvas, text.value, settings)
+    if (useRichTextMode) {
+      renderRichTextCanvas(exportCanvas, richText.value, settings)
+    } else {
+      renderCanvas(exportCanvas, text.value, settings)
+    }
 
     const blob = generateBMP(exportCanvas, settings.isFlipped)
 
@@ -216,57 +236,97 @@ const exportBMP = async () => {
 }
 
 const loadHistoryItem = (item: HistoryItem) => {
+  isLoading.value = true
   currentHistoryId.value = item.id
-  text.value = item.text
+  if (item.settings.useRichTextMode && item.richText) {
+    richText.value = item.richText
+    text.value = item.richText.spans.map(s => s.text).join('')
+    settings.useRichTextMode = true
+  } else {
+    text.value = item.text
+    richText.value = { spans: [{ text: item.text, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
+    settings.useRichTextMode = false
+  }
   Object.assign(settings, sanitizeSettings(item.settings))
-}
-
-const resetEditor = () => {
-  currentHistoryId.value = null
-  text.value = 'New Tag'
-  // Keep current settings but stop editing history
+  isLoading.value = false
 }
 
 watchDebounced(
-  [text, settings],
+  [text, richText, settings, useRichTextMode],
   async () => {
-    if (currentHistoryId.value) {
-      try {
-        await updateHistoryItem(currentHistoryId.value, {
+    try {
+      if (currentHistoryId.value) {
+        // Update existing history item
+        const updates: any = {
           text: text.value,
           settings: { ...settings }
-        })
-      } catch (err) {
-        console.error('Auto-save failed:', err)
+        }
+        if (useRichTextMode.value) {
+          updates.richText = richText.value
+        } else {
+          updates.richText = deleteField()
+        }
+        await updateHistoryItem(currentHistoryId.value, updates)
       }
+    } catch (err) {
+      console.error('Auto-save failed:', err)
     }
   },
   { deep: true, debounce: 1000 }
 )
 
+async function triggerRichTextMode(newMode: boolean) {
+  if (isLoading.value) return
+  if (newMode) {
+    // Switching to rich text mode - convert plain text to rich text
+    richText.value = { spans: [{ text: text.value, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
+  } else {
+    // Switching to plain text mode - convert rich text to plain text
+    text.value = richText.value.spans.map(span => span.text).join('')
+  }
+
+  // Trigger immediate auto-save when mode changes
+  if (currentHistoryId.value) {
+    try {
+      const updates: any = {
+        text: text.value,
+        settings: { ...settings }
+      }
+      if (newMode) {
+        updates.richText = richText.value
+      } else {
+        // When switching to plain text mode, delete the richText field
+        updates.richText = deleteField()
+      }
+      await updateHistoryItem(currentHistoryId.value, updates)
+    } catch (err) {
+      console.error('Auto-save failed:', err)
+    }
+  }
+}
+
 watch(
-  [
-    text,
-    () => settings.width,
-    () => settings.height,
-    () => settings.padding,
-    () => settings.unit,
-    () => settings.isFlipped,
-    () => settings.autoSize
-  ],
-  updateCanvas,
-  { immediate: true, flush: 'sync' }
+  richText,
+  (newRichText) => {
+    if (useRichTextMode.value) {
+      text.value = newRichText.spans.map(s => s.text).join('')
+    }
+  },
+  { deep: true }
 )
 
 watch(
-  () => settings.fontSize,
-  () => {
-    if (!settings.autoSize) {
-      updateCanvas()
-    }
-  },
-  { immediate: false }
+  [
+    text,
+    richText,
+    useRichTextMode,
+    settings
+  ],
+  updateCanvas,
+  { immediate: true, flush: 'sync', deep: true }
 )
+
+
 
 onMounted(() => {
   updateCanvas()
@@ -276,6 +336,5 @@ defineExpose({
   settings,
   currentHistoryId,
   loadHistoryItem,
-  resetEditor
 })
 </script>

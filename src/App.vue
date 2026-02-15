@@ -87,7 +87,7 @@ import History from './components/History.vue'
 import Toast from './components/Toast.vue'
 import { useAuth } from './composables/useAuth'
 import { useHistory } from './composables/useHistory'
-import type { HistoryItem, LaserSettings } from './types'
+import type { HistoryItem, LaserSettings, RichText } from './types'
 
 const { addHistoryItem } = useHistory()
 const { user, authLoading, signIn, signUp, logOut } = useAuth()
@@ -166,13 +166,13 @@ const isLaserSettings = (value: unknown): value is LaserSettings => {
   )
 }
 
-const handleSave = async ({ text, settings }: { text: string; settings: LaserSettings }) => {
+const handleSave = async ({ text, richText, settings }: { text: string; richText?: RichText; settings: LaserSettings }) => {
   if (!text || text.trim() === '') {
     toastRef.value?.addNotification('Please enter text before saving', 'warning')
     return
   }
 
-  const id = await addHistoryItem(text, settings)
+  const id = await addHistoryItem(text, settings, richText)
   if (id && editorRef.value) {
     editorRef.value.currentHistoryId = id
   }

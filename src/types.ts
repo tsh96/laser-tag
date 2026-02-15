@@ -1,3 +1,16 @@
+export interface TextSpan {
+    text: string
+    fontFamily: string
+    fontSize: number
+    fontWeight?: 'normal' | 'bold'
+    fontStyle?: 'normal' | 'italic'
+    textDecoration?: 'none' | 'underline' | 'line-through'
+}
+
+export interface RichText {
+    spans: TextSpan[]
+}
+
 export interface LaserSettings {
     width: number
     height: number
@@ -6,11 +19,13 @@ export interface LaserSettings {
     isFlipped: boolean
     fontSize: number
     autoSize: boolean
+    useRichTextMode: boolean
 }
 
 export interface HistoryItem {
     id: string
     text: string
+    richText?: RichText
     settings: LaserSettings
     status: 'pending' | 'exported'
     timestamp: any

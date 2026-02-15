@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   query,
@@ -15,7 +16,7 @@ import {
 } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../firebase'
-import type { LaserSettings, HistoryItem } from '../types'
+import type { LaserSettings, HistoryItem, RichText } from '../types'
 
 export function useHistory() {
   const PAGE_SIZE = 20
@@ -69,20 +70,26 @@ export function useHistory() {
     })
   }
 
-  const addHistoryItem = async (text: string, settings: LaserSettings) => {
+  const addHistoryItem = async (text: string, settings: LaserSettings, richText?: RichText) => {
     try {
       const user = auth.currentUser
       if (!user) {
         throw new Error('Please sign in before saving history.')
       }
 
-      const docRef = await addDoc(collection(db, 'history'), {
+      const data: any = {
         text,
         settings,
         status: 'pending',
         userId: user.uid,
         timestamp: serverTimestamp()
-      })
+      }
+
+      if (richText) {
+        data.richText = richText
+      }
+
+      const docRef = await addDoc(collection(db, 'history'), data)
       return docRef.id
     } catch (err: any) {
       error.value = err.message
@@ -103,7 +110,12 @@ export function useHistory() {
         throw new Error('You do not have permission to update this history item.')
       }
 
-      await updateDoc(docRef, updates as any)
+      // Filter out undefined values to prevent Firestore errors
+      const filteredUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
+      )
+
+      await updateDoc(docRef, filteredUpdates as any)
     } catch (err: any) {
       error.value = err.message
       throw err

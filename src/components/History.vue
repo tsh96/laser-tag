@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
-import { renderMiniature, renderCanvas } from '../utils/canvas'
+import { renderMiniature, renderCanvas, renderRichTextMiniature, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
 import { extractNamesFromImage, getGeminiApiKey, saveGeminiApiKey } from '../utils/gemini'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -224,7 +224,12 @@ const renderPreviews = async () => {
       const parentWidth = Math.floor(canvas.parentElement?.clientWidth || 200)
       const maxWidth = Math.max(140, parentWidth)
       const maxHeight = Math.max(80, Math.floor(parentWidth * 0.6))
-      renderMiniature(canvas, item.text, item.settings, maxWidth, maxHeight)
+
+      if (item.richText) {
+        renderRichTextMiniature(canvas, item.richText, item.settings, maxWidth, maxHeight)
+      } else {
+        renderMiniature(canvas, item.text, item.settings, maxWidth, maxHeight)
+      }
     }
   })
 }
@@ -259,7 +264,11 @@ const exportItem = async (item: HistoryItem, overwrite: boolean) => {
 
   // Generate BMP
   const exportCanvas = document.createElement('canvas')
-  renderCanvas(exportCanvas, item.text, item.settings)
+  if (item.settings.useRichTextMode && item.richText) {
+    renderRichTextCanvas(exportCanvas, item.richText, item.settings)
+  } else {
+    renderCanvas(exportCanvas, item.text, item.settings)
+  }
 
   const blob = generateBMP(exportCanvas, item.settings.isFlipped)
 
