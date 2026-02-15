@@ -229,7 +229,8 @@ const handleNamesExtracted = async (names: string[]) => {
       isFlipped: false,
       fontSize: 24,
       autoSize: true,
-      useRichTextMode: false
+      useRichTextMode: false,
+      maxFontSize: 32,
     }
 
   // Add each name to history

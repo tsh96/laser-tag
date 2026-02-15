@@ -48,6 +48,15 @@
           <span class="input-unit">pt</span>
         </div>
       </div>
+
+      <div class="field-group">
+        <label class="field-label">Max Font Size</label>
+        <div class="input-with-unit">
+          <input v-model.number="settings.maxFontSize" type="number" min="1" step="1" class="field-control"
+            :disabled="!settings.autoSize" />
+          <span class="input-unit">pt</span>
+        </div>
+      </div>
     </div>
 
     <div class="stack-gap-md">
@@ -66,7 +75,7 @@
     <div class="stack-gap-md flex flex-wrap gap-x-6 gap-y-2">
       <label class="check-wrap">
         <input v-model="settings.autoSize" type="checkbox" class="check-input" />
-        <span class="check-label">Auto Size (Max 32pt)</span>
+        <span class="check-label">Auto Size</span>
       </label>
       <label class="check-wrap">
         <input v-model="settings.isFlipped" type="checkbox" class="check-input" />
@@ -124,7 +133,8 @@ const DEFAULT_SETTINGS: LaserSettings = {
   isFlipped: false,
   fontSize: 24,
   autoSize: true,
-  useRichTextMode: true
+  useRichTextMode: true,
+  maxFontSize: 32
 }
 
 const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
@@ -140,7 +150,8 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
     isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped,
     fontSize: typeof value.fontSize === 'number' && value.fontSize > 0 ? value.fontSize : DEFAULT_SETTINGS.fontSize,
     autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize,
-    useRichTextMode: typeof value.useRichTextMode === 'boolean' ? value.useRichTextMode : DEFAULT_SETTINGS.useRichTextMode
+    useRichTextMode: typeof value.useRichTextMode === 'boolean' ? value.useRichTextMode : DEFAULT_SETTINGS.useRichTextMode,
+    maxFontSize: typeof value.maxFontSize === 'number' && value.maxFontSize > 0 ? value.maxFontSize : DEFAULT_SETTINGS.maxFontSize
   }
 }
 

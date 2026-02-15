@@ -20,6 +20,7 @@ export interface LaserSettings {
     fontSize: number
     autoSize: boolean
     useRichTextMode: boolean
+    maxFontSize: number
 }
 
 export interface HistoryItem {

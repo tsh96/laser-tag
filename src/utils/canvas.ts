@@ -3,7 +3,7 @@ import type { LaserSettings, RichText, TextSpan } from '../types'
 // Constants
 const DPI = 300
 const PT_TO_PX = DPI / 72
-const MAX_AUTO_SIZE_PT = 32
+const DEFAULT_MAX_AUTO_SIZE_PT = 32
 const SAFETY_MARGIN = 0.05
 const LINE_HEIGHT_MULTIPLIER = 1.2
 const HATCH_SPACING = 10
@@ -98,7 +98,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   ctx.textBaseline = 'middle'
 
   // Binary search for optimal font size
-  const MAX_AUTO_SIZE = MAX_AUTO_SIZE_PT * PT_TO_PX
+  const MAX_AUTO_SIZE = (settings.maxFontSize || DEFAULT_MAX_AUTO_SIZE_PT) * PT_TO_PX
 
   let fontSize: number
 
@@ -207,7 +207,7 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
     return null
   }
 
-  const MAX_AUTO_SIZE = MAX_AUTO_SIZE_PT * PT_TO_PX
+  const MAX_AUTO_SIZE = (settings.maxFontSize || DEFAULT_MAX_AUTO_SIZE_PT) * PT_TO_PX
 
   // Group spans into lines based on newlines
   const lines: TextSpan[][] = [[]]
