@@ -207,7 +207,7 @@ const exportBMP = async () => {
     renderCanvas(exportCanvas, text.value, settings)
 
     const blob = generateBMP(exportCanvas, settings.isFlipped)
-    
+
     const result = await overwriteBMP(blob, 'output.bmp')
     if (result === 'fallback') {
       downloadBMP(blob, 'output.bmp')
@@ -252,11 +252,20 @@ watch(
     () => settings.padding,
     () => settings.unit,
     () => settings.isFlipped,
-    () => settings.fontSize,
     () => settings.autoSize
   ],
   updateCanvas,
   { immediate: true, flush: 'sync' }
+)
+
+watch(
+  () => settings.fontSize,
+  () => {
+    if (!settings.autoSize) {
+      updateCanvas()
+    }
+  },
+  { immediate: false }
 )
 
 onMounted(() => {
