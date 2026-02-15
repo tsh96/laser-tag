@@ -82,6 +82,7 @@ If no names are found, return an empty response.`
       .split('\n')
       .map(name => name.trim())
       .filter(name => name.length > 0 && !name.match(/^[\d\.\-\*]+$/))
+      .map(name => name.toUpperCase())
 
     return names
   } catch (error) {
