@@ -104,7 +104,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { useStorage, watchDebounced } from '@vueuse/core'
 import { renderCanvas } from '../utils/canvas'
-import { generateBMP, downloadBMP } from '../utils/bmp'
+import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
 import { useHistory } from '../composables/useHistory'
 import type { HistoryItem, LaserSettings } from '../types'
 
@@ -200,15 +200,18 @@ const saveToHistory = () => {
   })
 }
 
-const exportBMP = () => {
+const exportBMP = async () => {
   if (canvasRef.value) {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
     renderCanvas(exportCanvas, text.value, settings)
 
     const blob = generateBMP(exportCanvas, settings.isFlipped)
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    downloadBMP(blob, `laser-tag-${timestamp}.bmp`)
+    
+    const result = await overwriteBMP(blob, 'output.bmp')
+    if (result === 'fallback') {
+      downloadBMP(blob, 'output.bmp')
+    }
   }
 }
 

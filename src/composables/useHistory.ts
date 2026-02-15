@@ -6,16 +6,12 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getDocs,
   query,
   orderBy,
   where,
-  limit,
-  startAfter,
   serverTimestamp,
-  QueryDocumentSnapshot,
-  DocumentData,
-  Unsubscribe
+  Unsubscribe,
+  onSnapshot
 } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../firebase'
@@ -29,46 +25,48 @@ export function useHistory() {
   const hasMore = ref(false)
   const error = ref<string | null>(null)
   let unsubscribeAuth: Unsubscribe | null = null
+  let unsubscribeListener: Unsubscribe | null = null
   const currentUserId = ref<string | null>(null)
-  const lastVisible = ref<QueryDocumentSnapshot<DocumentData> | null>(null)
+  const allHistoryItems = ref<HistoryItem[]>([])
+  const displayLimit = ref(PAGE_SIZE)
 
-  const fetchHistory = async (userId: string, reset = true) => {
-    try {
-      if (reset) {
-        loading.value = true
-        historyItems.value = []
-        lastVisible.value = null
-      }
-
-      error.value = null
-
-      const q = query(
-        collection(db, 'history'),
-        where('userId', '==', userId),
-        orderBy('timestamp', 'desc'),
-        ...(lastVisible.value && !reset
-          ? [startAfter(lastVisible.value)]
-          : []),
-        limit(PAGE_SIZE)
-      )
-
-      const snapshot = await getDocs(q)
-      const newItems = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as HistoryItem))
-
-      historyItems.value = reset
-        ? newItems
-        : [...historyItems.value, ...newItems]
-      lastVisible.value = snapshot.docs.at(-1) ?? null
-      hasMore.value = snapshot.docs.length === PAGE_SIZE
-    } catch (err: any) {
-      error.value = err.message
-    } finally {
-      loading.value = false
-      loadingMore.value = false
+  const fetchHistory = (userId: string) => {
+    if (unsubscribeListener) {
+      unsubscribeListener()
     }
+
+    loading.value = true
+    error.value = null
+    displayLimit.value = PAGE_SIZE
+
+    const q = query(
+      collection(db, 'history'),
+      where('userId', '==', userId),
+      orderBy('timestamp', 'desc')
+    )
+
+    unsubscribeListener = onSnapshot(q, (snapshot) => {
+      try {
+        allHistoryItems.value = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as HistoryItem)).sort((a, b) => {
+          const aTime = a.timestamp?.toMillis?.() ?? 0
+          const bTime = b.timestamp?.toMillis?.() ?? 0
+          return bTime - aTime
+        })
+
+        historyItems.value = allHistoryItems.value.slice(0, displayLimit.value)
+        hasMore.value = allHistoryItems.value.length > displayLimit.value
+        loading.value = false
+      } catch (err: any) {
+        error.value = err.message
+        loading.value = false
+      }
+    }, (err) => {
+      error.value = err.message
+      loading.value = false
+    })
   }
 
   const addHistoryItem = async (text: string, settings: LaserSettings) => {
@@ -85,16 +83,6 @@ export function useHistory() {
         userId: user.uid,
         timestamp: serverTimestamp()
       })
-      const createdSnapshot = await getDoc(docRef)
-      const createdData = createdSnapshot.data()
-
-      historyItems.value = [{
-        id: docRef.id,
-        text: (createdData?.text as string) ?? text,
-        settings: (createdData?.settings as LaserSettings) ?? settings,
-        status: (createdData?.status as HistoryItem['status']) ?? 'pending',
-        timestamp: createdData?.timestamp ?? null
-      }, ...historyItems.value]
       return docRef.id
     } catch (err: any) {
       error.value = err.message
@@ -116,11 +104,6 @@ export function useHistory() {
       }
 
       await updateDoc(docRef, updates as any)
-      historyItems.value = historyItems.value.map(item => (
-        item.id === id
-          ? { ...item, ...updates }
-          : item
-      ))
     } catch (err: any) {
       error.value = err.message
       throw err
@@ -141,20 +124,22 @@ export function useHistory() {
       }
 
       await deleteDoc(docRef)
-      historyItems.value = historyItems.value.filter(item => item.id !== id)
     } catch (err: any) {
       error.value = err.message
       throw err
     }
   }
 
-  const loadMoreHistory = async () => {
-    if (!currentUserId.value || loading.value || loadingMore.value || !hasMore.value) {
+  const loadMoreHistory = () => {
+    if (loadingMore.value || !hasMore.value) {
       return
     }
 
     loadingMore.value = true
-    await fetchHistory(currentUserId.value, false)
+    displayLimit.value += PAGE_SIZE
+    historyItems.value = allHistoryItems.value.slice(0, displayLimit.value)
+    hasMore.value = allHistoryItems.value.length > displayLimit.value
+    loadingMore.value = false
   }
 
   onMounted(() => {
@@ -162,19 +147,27 @@ export function useHistory() {
       currentUserId.value = user?.uid ?? null
 
       if (!user) {
+        if (unsubscribeListener) {
+          unsubscribeListener()
+          unsubscribeListener = null
+        }
         historyItems.value = []
+        allHistoryItems.value = []
         hasMore.value = false
         loading.value = false
         return
       }
 
-      void fetchHistory(user.uid, true)
+      fetchHistory(user.uid)
     })
   })
 
   onUnmounted(() => {
     if (unsubscribeAuth) {
       unsubscribeAuth()
+    }
+    if (unsubscribeListener) {
+      unsubscribeListener()
     }
   })
 
