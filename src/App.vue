@@ -5,14 +5,9 @@
         <div class="app-header__row">
           <div class="app-header__brand">
             <span class="app-logo">⚡</span>
-            <h1 class="app-title">LaserTag</h1>
+            <h1 class="app-title hidden sm:block">LaserTag</h1>
           </div>
-          <button
-            v-if="canInstallApp"
-            class="app-badge"
-            type="button"
-            @click="handleInstallApp"
-          >
+          <button v-if="canInstallApp" class="app-badge" type="button" @click="handleInstallApp">
             Install app
           </button>
           <div v-if="user" class="app-header__user">
