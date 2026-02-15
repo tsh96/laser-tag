@@ -610,6 +610,8 @@ body {
   display: grid;
   gap: 0.8rem;
   padding-right: 0.2rem;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
 }
 
 .history-load-trigger {
