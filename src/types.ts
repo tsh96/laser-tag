@@ -19,6 +19,7 @@ export interface LaserSettings {
     isFlipped: boolean
     fontSize: number
     autoSize: boolean
+    useRichTextMode: boolean
 }
 
 export interface HistoryItem {

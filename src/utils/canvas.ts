@@ -102,7 +102,7 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
 
   let fontSize: number
 
-  if (settings.autoSize || settings.autoSize === undefined) {
+  if (settings.autoSize) {
     let low = 1
     let high = Math.floor(MAX_AUTO_SIZE)
     let bestSize = low
@@ -212,7 +212,7 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
   // Group spans into lines based on newlines
   const lines: TextSpan[][] = [[]]
   for (const span of richText.spans) {
-    const parts = span.text.split('\n')
+    const parts = span.text.split(/\r?\n/)
     for (let i = 0; i < parts.length; i++) {
       if (i > 0) {
         lines.push([])
@@ -317,16 +317,17 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
       const metrics = ctx.measureText(span.text)
 
       // Draw text decoration
+      ctx.strokeStyle = '#000000'
       if (span.textDecoration === 'underline') {
         ctx.beginPath()
-        ctx.moveTo(currentX, currentY + fontSize * 0.1)
-        ctx.lineTo(currentX + metrics.width, currentY + fontSize * 0.1)
+        ctx.moveTo(currentX, currentY + fontSize * 0.45)
+        ctx.lineTo(currentX + metrics.width, currentY + fontSize * 0.45)
         ctx.lineWidth = Math.max(1, fontSize * 0.05)
         ctx.stroke()
       } else if (span.textDecoration === 'line-through') {
         ctx.beginPath()
-        ctx.moveTo(currentX, currentY - fontSize * 0.2)
-        ctx.lineTo(currentX + metrics.width, currentY - fontSize * 0.2)
+        ctx.moveTo(currentX, currentY)
+        ctx.lineTo(currentX + metrics.width, currentY)
         ctx.lineWidth = Math.max(1, fontSize * 0.05)
         ctx.stroke()
       }
@@ -356,7 +357,7 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
  * @param maxHeight - Maximum height of the preview
  */
 export function renderMiniature(canvas: HTMLCanvasElement, text: string, settings: LaserSettings, maxWidth = 200, maxHeight = 100): void {
-  const { width, height, padding, unit } = settings
+  const { width, height, unit } = settings
 
   // Calculate aspect ratio
   const widthPx = convertToPixels(width, unit)
@@ -396,7 +397,7 @@ export function renderMiniature(canvas: HTMLCanvasElement, text: string, setting
  * @param maxHeight - Maximum height of the preview
  */
 export function renderRichTextMiniature(canvas: HTMLCanvasElement, richText: RichText, settings: LaserSettings, maxWidth = 200, maxHeight = 100): void {
-  const { width, height, padding, unit } = settings
+  const { width, height, unit } = settings
 
   // Calculate aspect ratio
   const widthPx = convertToPixels(width, unit)

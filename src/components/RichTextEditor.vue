@@ -2,51 +2,35 @@
   <div class="rich-text-editor">
     <div class="toolbar">
       <div class="toolbar-section">
-        <button
-          @click="toggleFormat('bold')"
-          :class="{ active: isFormatActive('bold') }"
-          class="toolbar-btn"
-          type="button"
-          title="Bold"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button @click="toggleFormat('bold')" :class="{ active: isFormatActive('bold') }" class="toolbar-btn"
+          type="button" title="Bold">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
             <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" />
           </svg>
         </button>
-        <button
-          @click="toggleFormat('italic')"
-          :class="{ active: isFormatActive('italic') }"
-          class="toolbar-btn"
-          type="button"
-          title="Italic"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button @click="toggleFormat('italic')" :class="{ active: isFormatActive('italic') }" class="toolbar-btn"
+          type="button" title="Italic">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="4" x2="10" y2="4" />
             <line x1="14" y1="20" x2="5" y2="20" />
             <line x1="15" y1="4" x2="9" y2="20" />
           </svg>
         </button>
-        <button
-          @click="toggleFormat('underline')"
-          :class="{ active: isFormatActive('underline') }"
-          class="toolbar-btn"
-          type="button"
-          title="Underline"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button @click="toggleFormat('underline')" :class="{ active: isFormatActive('underline') }" class="toolbar-btn"
+          type="button" title="Underline">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3" />
             <line x1="4" y1="21" x2="20" y2="21" />
           </svg>
         </button>
-        <button
-          @click="toggleFormat('strikethrough')"
-          :class="{ active: isFormatActive('strikethrough') }"
-          class="toolbar-btn"
-          type="button"
-          title="Strikethrough"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button @click="toggleFormat('strikethrough')" :class="{ active: isFormatActive('strikethrough') }"
+          class="toolbar-btn" type="button" title="Strikethrough">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 4H9a3 3 0 0 0-2.83 4" />
             <path d="M14 12a4 4 0 0 1 0 8H6" />
             <line x1="4" y1="12" x2="20" y2="12" />
@@ -55,12 +39,7 @@
       </div>
 
       <div class="toolbar-section">
-        <select
-          v-model="currentFontFamily"
-          @change="applyFontFamily"
-          class="toolbar-select"
-          title="Font Family"
-        >
+        <select v-model="currentFontFamily" @change="applyFontFamily" class="toolbar-select" title="Font Family">
           <option value="Arial">Arial</option>
           <option value="Times New Roman">Times New Roman</option>
           <option value="Courier New">Courier New</option>
@@ -70,32 +49,19 @@
           <option value="Impact">Impact</option>
         </select>
 
-        <select
-          v-model="currentFontSize"
-          @change="applyFontSize"
-          class="toolbar-select"
-          title="Font Size"
-        >
+        <select v-model="currentFontSize" @change="applyFontSize" class="toolbar-select" title="Font Size">
           <option v-for="size in fontSizes" :key="size" :value="size">{{ size }}pt</option>
         </select>
       </div>
     </div>
 
-    <div
-      ref="editorRef"
-      contenteditable="true"
-      @input="handleInput"
-      @keydown="handleKeyDown"
-      @mouseup="updateToolbarState"
-      @keyup="updateToolbarState"
-      class="editor-content"
-      :placeholder="placeholder"
-    ></div>
+    <div ref="editorRef" contenteditable="true" @input="handleInput" @keydown="handleKeyDown"
+      @mouseup="updateToolbarState" @keyup="updateToolbarState" class="editor-content" :placeholder="placeholder"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import type { RichText, TextSpan } from '../types'
 
 // Constants
@@ -118,7 +84,9 @@ const emit = defineEmits<{
 const editorRef = ref<HTMLDivElement | null>(null)
 const currentFontFamily = ref('Arial')
 const currentFontSize = ref(24)
+const lastSelectionOffsets = ref<{ start: number; end: number } | null>(null)
 const fontSizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72]
+const BLOCK_ELEMENTS = new Set(['div', 'p', 'li', 'blockquote', 'pre'])
 
 // NOTE: Using document.execCommand() which is deprecated but still widely supported.
 // For production, consider migrating to modern Selection API or a library like Lexical/ProseMirror.
@@ -135,11 +103,17 @@ const isFormatActive = (format: 'bold' | 'italic' | 'underline' | 'strikethrough
 }
 
 const applyFontFamily = () => {
+  restoreSelection()
   document.execCommand('fontName', false, currentFontFamily.value)
+  captureSelectionOffsets()
   emitChange()
 }
 
 const applyFontSize = () => {
+  restoreSelection()
+
+  const previousSelectionOffsets = lastSelectionOffsets.value
+
   // Convert pt to px for HTML (approximate conversion)
   const pxSize = Math.round(currentFontSize.value * PX_TO_PT_RATIO)
   document.execCommand('fontSize', false, TEMP_FONT_SIZE_MARKER) // Use temporary marker for replacement
@@ -150,14 +124,34 @@ const applyFontSize = () => {
     span.innerHTML = el.innerHTML
     el.replaceWith(span)
   })
+
+  if (previousSelectionOffsets && editorRef.value) {
+    setSelectionOffsets(editorRef.value, previousSelectionOffsets)
+  }
+
+  captureSelectionOffsets()
   emitChange()
 }
 
 const updateToolbarState = () => {
+  captureSelectionOffsets()
+
   // Get current font family
   const fontFamily = document.queryCommandValue('fontName')
   if (fontFamily && fontFamily !== 'false') {
     currentFontFamily.value = fontFamily.replace(/["']/g, '')
+  }
+
+  const fontSize = document.queryCommandValue('fontSize')
+  if (fontSize && fontSize !== 'false') {
+    const numericSize = Number.parseInt(String(fontSize), 10)
+    if (!Number.isNaN(numericSize)) {
+      const htmlSizeToPx = [10, 13, 16, 18, 24, 32, 48]
+      const mappedPx = htmlSizeToPx[numericSize - 1]
+      if (mappedPx) {
+        currentFontSize.value = Math.round(mappedPx / PX_TO_PT_RATIO)
+      }
+    }
   }
 }
 
@@ -188,67 +182,204 @@ const emitChange = () => {
   })
 }
 
+const getSelectionOffsets = (root: HTMLElement): { start: number; end: number } | null => {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) {
+    return null
+  }
+
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) {
+    return null
+  }
+
+  const preSelectionRange = range.cloneRange()
+  preSelectionRange.selectNodeContents(root)
+  preSelectionRange.setEnd(range.startContainer, range.startOffset)
+
+  const start = preSelectionRange.toString().length
+  const end = start + range.toString().length
+
+  return { start, end }
+}
+
+const setSelectionOffsets = (root: HTMLElement, offsets: { start: number; end: number }) => {
+  const selection = window.getSelection()
+  if (!selection) {
+    return
+  }
+
+  let currentOffset = 0
+  let startNode: Node | null = null
+  let startOffset = 0
+  let endNode: Node | null = null
+  let endOffset = 0
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  let textNode = walker.nextNode()
+
+  while (textNode) {
+    const nodeLength = textNode.textContent?.length ?? 0
+    const nextOffset = currentOffset + nodeLength
+
+    if (!startNode && offsets.start <= nextOffset) {
+      startNode = textNode
+      startOffset = Math.max(0, offsets.start - currentOffset)
+    }
+
+    if (!endNode && offsets.end <= nextOffset) {
+      endNode = textNode
+      endOffset = Math.max(0, offsets.end - currentOffset)
+      break
+    }
+
+    currentOffset = nextOffset
+    textNode = walker.nextNode()
+  }
+
+  if (!startNode || !endNode) {
+    return
+  }
+
+  const range = document.createRange()
+  range.setStart(startNode, startOffset)
+  range.setEnd(endNode, endOffset)
+
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
+const captureSelectionOffsets = () => {
+  if (!editorRef.value) {
+    return
+  }
+
+  const offsets = getSelectionOffsets(editorRef.value)
+  if (offsets) {
+    lastSelectionOffsets.value = offsets
+  }
+}
+
+const restoreSelection = () => {
+  if (!editorRef.value || !lastSelectionOffsets.value) {
+    return
+  }
+
+  editorRef.value.focus()
+  setSelectionOffsets(editorRef.value, lastSelectionOffsets.value)
+}
+
+const handleDocumentSelectionChange = () => {
+  captureSelectionOffsets()
+}
+
 const parseEditorContent = (): RichText => {
   if (!editorRef.value) {
     return { spans: [] }
   }
 
   const spans: TextSpan[] = []
-  const walker = document.createTreeWalker(
-    editorRef.value,
-    NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
-    null
-  )
 
-  let currentSpan: TextSpan | null = null
-  const styleStack: Partial<TextSpan>[] = [{}]
+  const hasTrailingNewline = () => {
+    if (spans.length === 0) {
+      return false
+    }
 
-  while (walker.nextNode()) {
-    const node = walker.currentNode
+    const lastSpan = spans[spans.length - 1]
+    return lastSpan.text.endsWith('\n')
+  }
 
+  const pushTextSpan = (text: string, currentStyle: Partial<TextSpan>) => {
+    if (text.length === 0) {
+      return
+    }
+
+    const defaultedStyle: Partial<TextSpan> = { ...currentStyle }
+
+    if (defaultedStyle.fontSize === undefined) {
+      defaultedStyle.fontSize = currentFontSize.value
+    }
+
+    if (!defaultedStyle.fontFamily && currentFontFamily.value) {
+      defaultedStyle.fontFamily = currentFontFamily.value
+    }
+
+    spans.push({
+      text,
+      ...defaultedStyle
+    })
+  }
+
+  const traverse = (node: Node, currentStyle: Partial<TextSpan>) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement
       const tagName = element.tagName.toLowerCase()
-      const computedStyle = window.getComputedStyle(element)
+      const inlineStyle = element.style
 
-      const style: Partial<TextSpan> = { ...styleStack[styleStack.length - 1] }
+      if (BLOCK_ELEMENTS.has(tagName) && spans.length > 0 && !hasTrailingNewline()) {
+        pushTextSpan('\n', currentStyle)
+      }
 
-      if (tagName === 'b' || tagName === 'strong' || computedStyle.fontWeight === 'bold' || parseInt(computedStyle.fontWeight) >= 700) {
+      if (tagName === 'br') {
+        pushTextSpan('\n', currentStyle)
+        return
+      }
+
+      const style: Partial<TextSpan> = { ...currentStyle }
+
+      if (tagName === 'b' || tagName === 'strong' || inlineStyle.fontWeight === 'bold' || Number.parseInt(inlineStyle.fontWeight, 10) >= 700) {
         style.fontWeight = 'bold'
       }
-      if (tagName === 'i' || tagName === 'em' || computedStyle.fontStyle === 'italic') {
+      if (tagName === 'i' || tagName === 'em' || inlineStyle.fontStyle === 'italic') {
         style.fontStyle = 'italic'
       }
-      if (tagName === 'u' || computedStyle.textDecoration?.includes('underline')) {
+      if (tagName === 'u' || inlineStyle.textDecoration?.includes('underline')) {
         style.textDecoration = 'underline'
       }
-      if (tagName === 's' || tagName === 'strike' || computedStyle.textDecoration?.includes('line-through')) {
+      if (tagName === 's' || tagName === 'strike' || inlineStyle.textDecoration?.includes('line-through')) {
         style.textDecoration = 'line-through'
       }
-      if (computedStyle.fontFamily) {
-        style.fontFamily = computedStyle.fontFamily.replace(/["']/g, '').split(',')[0]
-      }
-      if (computedStyle.fontSize) {
-        const pxSize = parseInt(computedStyle.fontSize)
-        style.fontSize = Math.round(pxSize / PX_TO_PT_RATIO) // Convert px to pt
+
+      if (tagName === 'font') {
+        const fontFace = element.getAttribute('face')
+        if (fontFace) {
+          style.fontFamily = fontFace.replace(/["']/g, '').split(',')[0]
+        }
       }
 
-      styleStack.push(style)
+      if (inlineStyle.fontFamily) {
+        style.fontFamily = inlineStyle.fontFamily.replace(/["']/g, '').split(',')[0]
+      }
+
+      if (inlineStyle.fontSize) {
+        if (inlineStyle.fontSize.endsWith('px')) {
+          const pxSize = Number.parseFloat(inlineStyle.fontSize)
+          if (!Number.isNaN(pxSize)) {
+            style.fontSize = Math.round(pxSize / PX_TO_PT_RATIO)
+          }
+        } else if (inlineStyle.fontSize.endsWith('pt')) {
+          const ptSize = Number.parseFloat(inlineStyle.fontSize)
+          if (!Number.isNaN(ptSize)) {
+            style.fontSize = Math.round(ptSize)
+          }
+        }
+      }
+
+      node.childNodes.forEach(child => traverse(child, style))
     } else if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent || ''
-      if (text) {
-        const style = styleStack[styleStack.length - 1]
-        const span: TextSpan = {
-          text,
-          fontFamily: style.fontFamily,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          fontStyle: style.fontStyle,
-          textDecoration: style.textDecoration
-        }
-        spans.push(span)
-      }
+      pushTextSpan(text, currentStyle)
     }
+  }
+
+  editorRef.value.childNodes.forEach(child => traverse(child, {}))
+
+  // If there are no spans but editor has text, create a default span
+  if (spans.length === 0 && editorRef.value.textContent) {
+    spans.push({
+      text: editorRef.value.textContent,
+      fontSize: currentFontSize.value
+    })
   }
 
   return { spans }
@@ -259,7 +390,7 @@ const renderRichText = (richText: RichText) => {
 
   let html = ''
   for (const span of richText.spans) {
-    let text = span.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    let text = span.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')
     let style = ''
 
     if (span.fontFamily) {
@@ -313,6 +444,12 @@ onMounted(() => {
   if (props.modelValue.spans.length > 0) {
     renderRichText(props.modelValue)
   }
+
+  document.addEventListener('selectionchange', handleDocumentSelectionChange)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('selectionchange', handleDocumentSelectionChange)
 })
 
 defineExpose({
@@ -331,8 +468,8 @@ defineExpose({
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 0.375rem;
   flex-wrap: wrap;
 }
@@ -345,25 +482,26 @@ defineExpose({
 
 .toolbar-btn {
   padding: 0.375rem;
-  background: white;
-  border: 1px solid #d1d5db;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  color: var(--text);
 }
 
 .toolbar-btn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+  background: var(--surface);
+  border-color: var(--accent);
 }
 
 .toolbar-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .toolbar-btn:disabled {
@@ -373,38 +511,40 @@ defineExpose({
 
 .toolbar-select {
   padding: 0.375rem 0.5rem;
-  background: white;
-  border: 1px solid #d1d5db;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
   font-size: 0.875rem;
   cursor: pointer;
+  color: var(--text);
 }
 
 .toolbar-select:hover {
-  border-color: #9ca3af;
+  border-color: var(--accent);
 }
 
 .editor-content {
   min-height: 4rem;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 0.375rem;
-  background: white;
+  background: var(--surface-soft);
   font-size: 1rem;
   line-height: 1.5;
   outline: none;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  color: var(--text);
 }
 
 .editor-content:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(57, 208, 255, 0.1);
 }
 
 .editor-content:empty:before {
   content: attr(placeholder);
-  color: #9ca3af;
+  color: var(--text-muted);
   pointer-events: none;
 }
 </style>

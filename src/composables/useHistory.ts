@@ -4,6 +4,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   query,
@@ -109,7 +110,12 @@ export function useHistory() {
         throw new Error('You do not have permission to update this history item.')
       }
 
-      await updateDoc(docRef, updates as any)
+      // Filter out undefined values to prevent Firestore errors
+      const filteredUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
+      )
+
+      await updateDoc(docRef, filteredUpdates as any)
     } catch (err: any) {
       error.value = err.message
       throw err

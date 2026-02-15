@@ -3,10 +3,6 @@
     <div class="panel-head">
       <div class="flex items-center justify-between w-full">
         <h2 class="panel-title">Editor</h2>
-        <button v-if="currentHistoryId" @click="resetEditor"
-          class="text-xs font-bold text-accent hover:text-white transition-colors" type="button">
-          NEW TAG
-        </button>
       </div>
     </div>
 
@@ -48,7 +44,7 @@
         <label class="field-label">Font Size</label>
         <div class="input-with-unit">
           <input v-model.number="settings.fontSize" type="number" min="1" step="1" class="field-control"
-            :disabled="settings.autoSize" />
+            :disabled="settings.autoSize || useRichTextMode" />
           <span class="input-unit">pt</span>
         </div>
       </div>
@@ -108,10 +104,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { useStorage, watchDebounced } from '@vueuse/core'
 import { renderCanvas, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
+import { deleteField } from 'firebase/firestore'
 import { useHistory } from '../composables/useHistory'
 import RichTextEditor from './RichTextEditor.vue'
 import type { HistoryItem, LaserSettings, RichText } from '../types'
@@ -125,7 +122,8 @@ const DEFAULT_SETTINGS: LaserSettings = {
   unit: 'in',
   isFlipped: false,
   fontSize: 24,
-  autoSize: true
+  autoSize: true,
+  useRichTextMode: true
 }
 
 const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
@@ -140,7 +138,8 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
     unit: isValidUnit(value.unit) ? value.unit : DEFAULT_SETTINGS.unit,
     isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped,
     fontSize: typeof value.fontSize === 'number' && value.fontSize > 0 ? value.fontSize : DEFAULT_SETTINGS.fontSize,
-    autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize
+    autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize,
+    useRichTextMode: typeof value.useRichTextMode === 'boolean' ? value.useRichTextMode : DEFAULT_SETTINGS.useRichTextMode
   }
 }
 
@@ -148,12 +147,18 @@ const emit = defineEmits<{
   (e: 'save', payload: { text: string; richText?: RichText; settings: LaserSettings }): void
 }>()
 
-const { updateHistoryItem } = useHistory()
+const { addHistoryItem, updateHistoryItem } = useHistory()
 const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 const richText = ref<RichText>({ spans: [{ text: 'Sample Text' }] })
-const useRichTextMode = ref(true)
+const isLoading = ref(false)
+const useRichTextMode = computed({
+  get: () => settings.useRichTextMode,
+  set: (value: boolean) => {
+    settings.useRichTextMode = value
+  }
+})
 
 const storedSettings = useStorage<LaserSettings>(
   SETTINGS_STORAGE_KEY,
@@ -194,13 +199,13 @@ watch(
 const updateCanvas = () => {
   if (canvasRef.value) {
     let actualFontSize: number | null = null
-    
+
     if (useRichTextMode.value) {
       actualFontSize = renderRichTextCanvas(canvasRef.value, richText.value, settings)
     } else {
       actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
     }
-    
+
     if (settings.autoSize && typeof actualFontSize === 'number') {
       const roundedAutoFontSize = Math.round(actualFontSize)
       if (settings.fontSize !== roundedAutoFontSize) {
@@ -212,8 +217,8 @@ const updateCanvas = () => {
 
 const saveToHistory = () => {
   emit('save', {
-    text: useRichTextMode.value ? richText.value.spans.map(s => s.text).join('') : text.value,
-    richText: useRichTextMode.value ? richText.value : undefined,
+    text: text.value,
+    richText: useRichTextMode ? richText.value : undefined,
     settings: { ...settings }
   })
 }
@@ -222,7 +227,7 @@ const exportBMP = async () => {
   if (canvasRef.value) {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
-    if (useRichTextMode.value) {
+    if (useRichTextMode) {
       renderRichTextCanvas(exportCanvas, richText.value, settings)
     } else {
       renderCanvas(exportCanvas, text.value, settings)
@@ -238,41 +243,96 @@ const exportBMP = async () => {
 }
 
 const loadHistoryItem = (item: HistoryItem) => {
+  isLoading.value = true
   currentHistoryId.value = item.id
   if (item.richText) {
-    useRichTextMode.value = true
     richText.value = item.richText
+    text.value = item.richText.spans.map(s => s.text).join('')
+    settings.useRichTextMode = true
   } else {
-    useRichTextMode.value = false
     text.value = item.text
+    richText.value = { spans: [{ text: item.text }] }
+    settings.useRichTextMode = false
   }
   Object.assign(settings, sanitizeSettings(item.settings))
-}
-
-const resetEditor = () => {
-  currentHistoryId.value = null
-  useRichTextMode.value = true
-  richText.value = { spans: [{ text: 'New Tag' }] }
-  text.value = 'New Tag'
-  // Keep current settings but stop editing history
+  isLoading.value = false
 }
 
 watchDebounced(
-  [text, richText, settings],
+  [text, richText, settings, useRichTextMode],
   async () => {
+    try {
+      if (currentHistoryId.value) {
+        // Update existing history item
+        const updates: any = {
+          text: text.value,
+          settings: { ...settings }
+        }
+        if (useRichTextMode.value) {
+          updates.richText = richText.value
+        } else {
+          updates.richText = deleteField()
+        }
+        await updateHistoryItem(currentHistoryId.value, updates)
+      } else {
+        // Auto-save new item
+        const id = await addHistoryItem(
+          text.value,
+          settings,
+          useRichTextMode.value ? richText.value : undefined
+        )
+        if (id) {
+          currentHistoryId.value = id
+        }
+      }
+    } catch (err) {
+      console.error('Auto-save failed:', err)
+    }
+  },
+  { deep: true, debounce: 1000 }
+)
+
+watch(
+  useRichTextMode,
+  async (newMode) => {
+    if (isLoading.value) return
+    if (newMode) {
+      // Switching to rich text mode - convert plain text to rich text
+      richText.value = { spans: [{ text: text.value }] }
+    } else {
+      // Switching to plain text mode - convert rich text to plain text
+      text.value = richText.value.spans.map(span => span.text).join('')
+    }
+
+    // Trigger immediate auto-save when mode changes
     if (currentHistoryId.value) {
       try {
-        await updateHistoryItem(currentHistoryId.value, {
-          text: useRichTextMode.value ? richText.value.spans.map(s => s.text).join('') : text.value,
-          richText: useRichTextMode.value ? richText.value : undefined,
+        const updates: any = {
+          text: text.value,
           settings: { ...settings }
-        })
+        }
+        if (newMode) {
+          updates.richText = richText.value
+        } else {
+          // When switching to plain text mode, delete the richText field
+          updates.richText = deleteField()
+        }
+        await updateHistoryItem(currentHistoryId.value, updates)
       } catch (err) {
         console.error('Auto-save failed:', err)
       }
     }
+  }
+)
+
+watch(
+  richText,
+  (newRichText) => {
+    if (useRichTextMode.value) {
+      text.value = newRichText.spans.map(s => s.text).join('')
+    }
   },
-  { deep: true, debounce: 1000 }
+  { deep: true }
 )
 
 watch(
@@ -280,26 +340,13 @@ watch(
     text,
     richText,
     useRichTextMode,
-    () => settings.width,
-    () => settings.height,
-    () => settings.padding,
-    () => settings.unit,
-    () => settings.isFlipped,
-    () => settings.autoSize
+    settings
   ],
   updateCanvas,
   { immediate: true, flush: 'sync', deep: true }
 )
 
-watch(
-  () => settings.fontSize,
-  () => {
-    if (!settings.autoSize) {
-      updateCanvas()
-    }
-  },
-  { immediate: false }
-)
+
 
 onMounted(() => {
   updateCanvas()
@@ -309,6 +356,5 @@ defineExpose({
   settings,
   currentHistoryId,
   loadHistoryItem,
-  resetEditor
 })
 </script>

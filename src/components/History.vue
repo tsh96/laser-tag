@@ -224,7 +224,7 @@ const renderPreviews = async () => {
       const parentWidth = Math.floor(canvas.parentElement?.clientWidth || 200)
       const maxWidth = Math.max(140, parentWidth)
       const maxHeight = Math.max(80, Math.floor(parentWidth * 0.6))
-      
+
       if (item.richText) {
         renderRichTextMiniature(canvas, item.richText, item.settings, maxWidth, maxHeight)
       } else {
@@ -264,7 +264,7 @@ const exportItem = async (item: HistoryItem, overwrite: boolean) => {
 
   // Generate BMP
   const exportCanvas = document.createElement('canvas')
-  if (item.richText) {
+  if (item.settings.useRichTextMode && item.richText) {
     renderRichTextCanvas(exportCanvas, item.richText, item.settings)
   } else {
     renderCanvas(exportCanvas, item.text, item.settings)
