@@ -55,8 +55,15 @@
     </div>
 
     <div class="stack-gap-md">
-      <label class="field-label">Text</label>
-      <textarea v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
+      <div class="flex items-center justify-between">
+        <label class="field-label">Text</label>
+        <label class="check-wrap">
+          <input v-model="useRichTextMode" type="checkbox" class="check-input" />
+          <span class="check-label">Rich Text Mode</span>
+        </label>
+      </div>
+      <RichTextEditor v-if="useRichTextMode" v-model="richText" placeholder="Enter text to engrave" />
+      <textarea v-else v-model="text" placeholder="Enter text to engrave" class="field-control" rows="2"></textarea>
     </div>
 
     <div class="stack-gap-md flex flex-wrap gap-x-6 gap-y-2">
@@ -103,10 +110,11 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import { useStorage, watchDebounced } from '@vueuse/core'
-import { renderCanvas } from '../utils/canvas'
+import { renderCanvas, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
 import { useHistory } from '../composables/useHistory'
-import type { HistoryItem, LaserSettings } from '../types'
+import RichTextEditor from './RichTextEditor.vue'
+import type { HistoryItem, LaserSettings, RichText } from '../types'
 
 const SETTINGS_STORAGE_KEY = 'lasertag-global-settings'
 
@@ -137,13 +145,15 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
 }
 
 const emit = defineEmits<{
-  (e: 'save', payload: { text: string; settings: LaserSettings }): void
+  (e: 'save', payload: { text: string; richText?: RichText; settings: LaserSettings }): void
 }>()
 
 const { updateHistoryItem } = useHistory()
 const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
+const richText = ref<RichText>({ spans: [{ text: 'Sample Text' }] })
+const useRichTextMode = ref(true)
 
 const storedSettings = useStorage<LaserSettings>(
   SETTINGS_STORAGE_KEY,
@@ -183,7 +193,14 @@ watch(
 
 const updateCanvas = () => {
   if (canvasRef.value) {
-    const actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    let actualFontSize: number | null = null
+    
+    if (useRichTextMode.value) {
+      actualFontSize = renderRichTextCanvas(canvasRef.value, richText.value, settings)
+    } else {
+      actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+    }
+    
     if (settings.autoSize && typeof actualFontSize === 'number') {
       const roundedAutoFontSize = Math.round(actualFontSize)
       if (settings.fontSize !== roundedAutoFontSize) {
@@ -195,7 +212,8 @@ const updateCanvas = () => {
 
 const saveToHistory = () => {
   emit('save', {
-    text: text.value,
+    text: useRichTextMode.value ? richText.value.spans.map(s => s.text).join('') : text.value,
+    richText: useRichTextMode.value ? richText.value : undefined,
     settings: { ...settings }
   })
 }
@@ -204,7 +222,11 @@ const exportBMP = async () => {
   if (canvasRef.value) {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
-    renderCanvas(exportCanvas, text.value, settings)
+    if (useRichTextMode.value) {
+      renderRichTextCanvas(exportCanvas, richText.value, settings)
+    } else {
+      renderCanvas(exportCanvas, text.value, settings)
+    }
 
     const blob = generateBMP(exportCanvas, settings.isFlipped)
 
@@ -217,23 +239,32 @@ const exportBMP = async () => {
 
 const loadHistoryItem = (item: HistoryItem) => {
   currentHistoryId.value = item.id
-  text.value = item.text
+  if (item.richText) {
+    useRichTextMode.value = true
+    richText.value = item.richText
+  } else {
+    useRichTextMode.value = false
+    text.value = item.text
+  }
   Object.assign(settings, sanitizeSettings(item.settings))
 }
 
 const resetEditor = () => {
   currentHistoryId.value = null
+  useRichTextMode.value = true
+  richText.value = { spans: [{ text: 'New Tag' }] }
   text.value = 'New Tag'
   // Keep current settings but stop editing history
 }
 
 watchDebounced(
-  [text, settings],
+  [text, richText, settings],
   async () => {
     if (currentHistoryId.value) {
       try {
         await updateHistoryItem(currentHistoryId.value, {
-          text: text.value,
+          text: useRichTextMode.value ? richText.value.spans.map(s => s.text).join('') : text.value,
+          richText: useRichTextMode.value ? richText.value : undefined,
           settings: { ...settings }
         })
       } catch (err) {
@@ -247,6 +278,8 @@ watchDebounced(
 watch(
   [
     text,
+    richText,
+    useRichTextMode,
     () => settings.width,
     () => settings.height,
     () => settings.padding,
@@ -255,7 +288,7 @@ watch(
     () => settings.autoSize
   ],
   updateCanvas,
-  { immediate: true, flush: 'sync' }
+  { immediate: true, flush: 'sync', deep: true }
 )
 
 watch(
