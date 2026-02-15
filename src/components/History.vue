@@ -3,9 +3,6 @@
     <div class="history-head">
       <div class="history-head__left">
         <h2 class="panel-title">History</h2>
-        <span class="history-count">
-          {{ historyItems.length }} item{{ historyItems.length === 1 ? '' : 's' }}
-        </span>
       </div>
 
       <div class="history-head__actions">
