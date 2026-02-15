@@ -49,7 +49,7 @@
         </div>
       </div>
 
-      <div class="field-group">
+      <div v-if="settings.autoSize" class="field-group">
         <label class="field-label">Max Font Size</label>
         <div class="input-with-unit">
           <input v-model.number="settings.maxFontSize" type="number" min="1" step="1" class="field-control"
