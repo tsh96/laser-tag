@@ -38,3 +38,10 @@ export interface Notification {
     type: 'success' | 'error' | 'warning' | 'info'
     timeout?: number
 }
+
+export interface Preset {
+    id: string
+    name: string
+    settings: LaserSettings
+    timestamp: any
+}

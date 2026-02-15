@@ -87,9 +87,11 @@ import History from './components/History.vue'
 import Toast from './components/Toast.vue'
 import { useAuth } from './composables/useAuth'
 import { useHistory } from './composables/useHistory'
+import { usePresets } from './composables/usePresets'
 import type { HistoryItem, LaserSettings, RichText } from './types'
 
 const { addHistoryItem } = useHistory()
+const { initPresets } = usePresets()
 const { user, authLoading, signIn, signUp, logOut } = useAuth()
 const editorRef = ref<InstanceType<typeof Editor> | null>(null)
 const toastRef = ref<InstanceType<typeof Toast> | null>(null)
@@ -142,6 +144,7 @@ onMounted(() => {
   updateStandaloneMode()
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
   window.addEventListener('appinstalled', handleAppInstalled)
+  initPresets()
 })
 
 onUnmounted(() => {

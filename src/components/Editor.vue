@@ -57,6 +57,31 @@
           <span class="input-unit">pt</span>
         </div>
       </div>
+
+
+      <div class="field-group">
+        <label class="field-label">Load Preset</label>
+        <select v-model="selectedPresetId" @change="applyPreset" class="field-control select-control">
+          <option value="">Select a preset...</option>
+          <option v-for="preset in presets" :key="preset.id" :value="preset.id">{{ preset.name }}</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Save Preset</label>
+        <button @click="savePresetSettings" class="field-control btn-secondary"
+          style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14,2 14,8 20,8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10,9 9,9 8,9" />
+          </svg>
+          Save
+        </button>
+      </div>
     </div>
 
     <div class="stack-gap-md">
@@ -132,6 +157,7 @@ import { renderCanvas, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
 import { deleteField } from 'firebase/firestore'
 import { useHistory } from '../composables/useHistory'
+import { usePresets } from '../composables/usePresets'
 import RichTextEditor from './RichTextEditor.vue'
 import type { HistoryItem, LaserSettings, RichText } from '../types'
 
@@ -168,7 +194,9 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
 }
 
 const { addHistoryItem, updateHistoryItem } = useHistory()
+const { savePreset, presets } = usePresets()
 const currentHistoryId = ref<string | null>(null)
+const selectedPresetId = ref('')
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 const isLoading = ref(false)
@@ -251,6 +279,26 @@ const convertToUppercase = () => {
 
 const saveToHistory = () => {
   addHistoryItem(text.value, settings, useRichTextMode.value ? richText.value : undefined)
+}
+
+const savePresetSettings = async () => {
+  const name = prompt('Enter preset name:')
+  if (name) {
+    try {
+      await savePreset(name, { ...settings })
+      alert('Preset saved!')
+    } catch (err) {
+      alert('Failed to save preset')
+    }
+  }
+}
+
+const applyPreset = () => {
+  const preset = presets.value.find(p => p.id === selectedPresetId.value)
+  if (preset) {
+    Object.assign(settings, preset.settings)
+    selectedPresetId.value = ''
+  }
 }
 
 const exportBMP = async () => {
