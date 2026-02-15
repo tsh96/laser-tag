@@ -294,19 +294,11 @@ const parseEditorContent = (): RichText => {
       return
     }
 
-    const defaultedStyle: Partial<TextSpan> = { ...currentStyle }
-
-    if (defaultedStyle.fontSize === undefined) {
-      defaultedStyle.fontSize = currentFontSize.value
-    }
-
-    if (!defaultedStyle.fontFamily && currentFontFamily.value) {
-      defaultedStyle.fontFamily = currentFontFamily.value
-    }
-
     spans.push({
       text,
-      ...defaultedStyle
+      fontSize: currentFontSize.value,
+      fontFamily: currentFontFamily.value,
+      ...currentStyle
     })
   }
 
@@ -378,7 +370,8 @@ const parseEditorContent = (): RichText => {
   if (spans.length === 0 && editorRef.value.textContent) {
     spans.push({
       text: editorRef.value.textContent,
-      fontSize: currentFontSize.value
+      fontSize: currentFontSize.value,
+      fontFamily: currentFontFamily.value
     })
   }
 
