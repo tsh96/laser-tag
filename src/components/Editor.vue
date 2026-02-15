@@ -144,10 +144,6 @@ const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
   }
 }
 
-const emit = defineEmits<{
-  (e: 'save', payload: { text: string; richText?: RichText; settings: LaserSettings }): void
-}>()
-
 const { addHistoryItem, updateHistoryItem } = useHistory()
 const currentHistoryId = ref<string | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -217,11 +213,7 @@ const updateCanvas = () => {
 }
 
 const saveToHistory = () => {
-  emit('save', {
-    text: text.value,
-    richText: useRichTextMode ? richText.value : undefined,
-    settings: { ...settings }
-  })
+  addHistoryItem(text.value, settings, useRichTextMode.value ? richText.value : undefined)
 }
 
 const exportBMP = async () => {
@@ -246,7 +238,7 @@ const exportBMP = async () => {
 const loadHistoryItem = (item: HistoryItem) => {
   isLoading.value = true
   currentHistoryId.value = item.id
-  if (item.richText) {
+  if (item.settings.useRichTextMode && item.richText) {
     richText.value = item.richText
     text.value = item.richText.spans.map(s => s.text).join('')
     settings.useRichTextMode = true
@@ -275,16 +267,6 @@ watchDebounced(
           updates.richText = deleteField()
         }
         await updateHistoryItem(currentHistoryId.value, updates)
-      } else {
-        // Auto-save new item
-        const id = await addHistoryItem(
-          text.value,
-          settings,
-          useRichTextMode.value ? richText.value : undefined
-        )
-        if (id) {
-          currentHistoryId.value = id
-        }
       }
     } catch (err) {
       console.error('Auto-save failed:', err)
