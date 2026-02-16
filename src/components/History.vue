@@ -21,8 +21,8 @@
             <circle cx="12" cy="13" r="3" />
           </svg>
           <div v-else class="loader loader--small"></div>
-          <input type="file" accept="image/*" capture="environment" @change="handleFileSelect" class="hidden-input"
-            :disabled="processing" />
+          <input ref="captureInputRef" type="file" accept="image/*" capture="environment" @change="handleFileSelect"
+            class="hidden-input" :disabled="processing || isCropModalOpen" />
         </label>
       </div>
     </div>
@@ -85,6 +85,27 @@
       </div>
     </div>
 
+    <div v-if="isCropModalOpen" class="dialog-overlay dialog-overlay--fullscreen" @click.self="closeCropModal">
+      <div class="dialog-panel crop-dialog" role="dialog" aria-modal="true" aria-labelledby="crop-photo-title">
+        <h3 id="crop-photo-title" class="dialog-title">Crop Photo</h3>
+        <p class="dialog-text">Adjust the crop box to select the area to scan for names.</p>
+        <div ref="cropStageRef" class="crop-stage">
+          <img ref="cropImageRef" v-if="cropImageUrl" :src="cropImageUrl" alt="Captured photo"
+            class="crop-stage__image" />
+        </div>
+        <p v-if="uploadError" class="form-note crop-note crop-note--error">{{ uploadError }}</p>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-cancel" :disabled="processing" @click="closeCropModal">Cancel</button>
+          <button type="button" class="btn-secondary btn-secondary--alt" :disabled="processing"
+            @click="resetCropSelection">Reset Crop</button>
+          <button type="button" class="btn-primary" :disabled="processing || !pendingImageFile"
+            @click="applyCropAndExtract">
+            {{ processing ? 'Processing…' : 'Extract Names' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="isSettingsModalOpen" class="dialog-overlay" @click.self="closeSettingsModal">
       <div class="dialog-panel" role="dialog" aria-modal="true" aria-labelledby="history-settings-title">
         <h3 id="history-settings-title" class="dialog-title">Settings</h3>
@@ -107,6 +128,7 @@
 </template>
 
 <script setup lang="ts">
+import Cropper from 'cropperjs'
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useHistory } from '../composables/useHistory'
 import { renderMiniature, renderCanvas, renderRichTextMiniature, renderRichTextCanvas } from '../utils/canvas'
@@ -135,6 +157,13 @@ const selectedHistoryId = ref<string | null>(null)
 
 const processing = ref(false)
 const uploadError = ref<string | null>(null)
+const captureInputRef = ref<HTMLInputElement | null>(null)
+const isCropModalOpen = ref(false)
+const cropStageRef = ref<HTMLElement | null>(null)
+const cropImageRef = ref<HTMLImageElement | null>(null)
+const cropImageUrl = ref<string | null>(null)
+const pendingImageFile = ref<File | null>(null)
+const cropperInstance = ref<Cropper | null>(null)
 const geminiApiKeyInput = ref('')
 const geminiApiKeyStatus = ref<string | null>(null)
 const isSettingsModalOpen = ref(false)
@@ -165,29 +194,129 @@ const clearGeminiApiKeySetting = () => {
   geminiApiKeyStatus.value = 'Gemini API key removed.'
 }
 
-const handleFileSelect = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
+const revokeCropImageUrl = () => {
+  if (cropImageUrl.value) {
+    URL.revokeObjectURL(cropImageUrl.value)
+    cropImageUrl.value = null
+  }
+}
+
+const destroyCropper = () => {
+  cropperInstance.value?.destroy()
+  cropperInstance.value = null
+}
+
+const initCropper = () => {
+  destroyCropper()
+
+  const image = cropImageRef.value
+  if (!image || !cropStageRef.value) {
+    return
+  }
+
+  const mountCropper = () => {
+    cropperInstance.value = new Cropper(image, {
+      container: cropStageRef.value as Element,
+    })
+  }
+
+  if (image.complete && image.naturalWidth > 0) {
+    mountCropper()
+    return
+  }
+
+  image.addEventListener('load', mountCropper, { once: true })
+}
+
+const resetCropSelection = () => {
+  cropperInstance.value?.getCropperSelection()?.$reset()
+}
+
+const openCropModal = (file: File) => {
+  destroyCropper()
+  revokeCropImageUrl()
+  pendingImageFile.value = file
+  cropImageUrl.value = URL.createObjectURL(file)
+  isCropModalOpen.value = true
+}
+
+const closeCropModal = () => {
+  isCropModalOpen.value = false
+  pendingImageFile.value = null
+  destroyCropper()
+  revokeCropImageUrl()
+  if (captureInputRef.value) {
+    captureInputRef.value.value = ''
+  }
+}
+
+const toBlob = (canvas: HTMLCanvasElement, type: string): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob)
+        return
+      }
+
+      reject(new Error('Unable to create cropped image'))
+    }, type, 0.95)
+  })
+}
+
+const createCroppedImageFile = async (file: File) => {
+  const selection = cropperInstance.value?.getCropperSelection()
+  if (!selection) {
+    return file
+  }
+
+  const canvas = await selection.$toCanvas()
+  if (canvas.width <= 0 || canvas.height <= 0) {
+    return file
+  }
+
+  const outputType = /image\/(png|webp|jpeg)/.test(file.type) ? file.type : 'image/jpeg'
+  const blob = await toBlob(canvas, outputType)
+  const baseName = file.name.replace(/\.[^.]+$/, '') || 'captured-photo'
+  const extension = outputType === 'image/png' ? 'png' : outputType === 'image/webp' ? 'webp' : 'jpg'
+
+  return new File([blob], `${baseName}-crop.${extension}`, { type: outputType })
+}
+
+const applyCropAndExtract = async () => {
+  if (!pendingImageFile.value || processing.value) {
+    return
+  }
 
   processing.value = true
   uploadError.value = null
 
   try {
-    const names = await extractNamesFromImage(file)
+    const croppedFile = await createCroppedImageFile(pendingImageFile.value)
+    const names = await extractNamesFromImage(croppedFile)
 
     if (names.length === 0) {
-      uploadError.value = 'No names were detected in the image.'
+      uploadError.value = 'No names were detected in the selected crop.'
       return
     }
 
     emit('names-extracted', names)
-    target.value = ''
+    closeCropModal()
   } catch (err: any) {
     uploadError.value = err.message || 'Failed to process image'
   } finally {
     processing.value = false
   }
+}
+
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  target.value = ''
+  uploadError.value = null
+
+  openCropModal(file)
 }
 
 const setCanvasRef = (id: string, el: unknown) => {
@@ -282,6 +411,15 @@ const confirmDelete = async (id: string) => {
 }
 
 watch(historyItems, renderPreviews, { deep: true })
+watch([isCropModalOpen, cropImageUrl], async ([isOpen, imageUrl]) => {
+  if (!isOpen || !imageUrl) {
+    return
+  }
+
+  await nextTick()
+  initCropper()
+})
+
 watch([historyItems, hasMore], async () => {
   await nextTick()
 
@@ -322,5 +460,7 @@ onMounted(() => {
 onUnmounted(() => {
   resizeObserver?.disconnect()
   loadMoreObserver?.disconnect()
+  destroyCropper()
+  revokeCropImageUrl()
 })
 </script>
