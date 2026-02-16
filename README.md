@@ -43,7 +43,7 @@ See [.devcontainer/README.md](.devcontainer/README.md) for more details.
 ### 1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Configure Environment Variables
@@ -54,13 +54,13 @@ Gemini API key can be entered directly in the app (History panel) and is saved i
 ### 3. Run Development Server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### 4. Build for Production
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ## Deploy to GitHub Pages

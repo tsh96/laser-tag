@@ -13,23 +13,23 @@ LaserTag PWA is a Progressive Web Application for generating 1-bit monochrome BM
 - **AI Integration**: Google Gemini AI (gemini-1.5-flash)
 - **PWA**: vite-plugin-pwa with Workbox
 - **Node**: >=24.0.0
-- **Package Manager**: npm >=10.0.0
+- **Package Manager**: pnpm >=10.0.0
 
 ## Key Commands
 
 ### Development
 
 ```bash
-npm install          # Install dependencies
-npm run dev         # Start development server (Vite)
-npm run build       # Build for production (runs vue-tsc + vite build)
-npm run preview     # Preview production build
+pnpm install          # Install dependencies
+pnpm run dev         # Start development server (Vite)
+pnpm run build       # Build for production (runs vue-tsc + vite build)
+pnpm run preview     # Preview production build
 ```
 
 ### Important Notes
 
-- Always run `npm run build` before production deployment to ensure TypeScript compilation
-- Use `npm install` (not `pnpm` or `yarn`) as the project uses npm
+- Always run `pnpm run build` before production deployment to ensure TypeScript compilation
+- Use `pnpm install` (not `npm` or `yarn`) as the project uses pnpm
 
 ## Tool & Skill Usage Policy (Required)
 
