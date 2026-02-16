@@ -833,6 +833,57 @@ body {
   max-height: none;
 }
 
+/* CropperJS v2 styling - Precision overrides based on library source */
+.crop-stage {
+  --theme-color: var(--accent, #39d0ff);
+}
+
+/* Target the handle host elements (cropper-handle) directly */
+.crop-stage cropper-handle[action$="-resize"] {
+  width: 28px !important;
+  height: 28px !important;
+  background-color: var(--theme-color) !important;
+  border: 2px solid #fff !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  z-index: 10 !important;
+  /* Reset the default transparent background from library host styles */
+  opacity: 1 !important;
+}
+
+/* Adjust positions to center the larger handles on the edges/corners */
+.crop-stage cropper-handle[action="n-resize"] {
+  top: -14px !important;
+}
+.crop-stage cropper-handle[action="s-resize"] {
+  bottom: -14px !important;
+}
+.crop-stage cropper-handle[action="e-resize"] {
+  right: -14px !important;
+}
+.crop-stage cropper-handle[action="w-resize"] {
+  left: -14px !important;
+}
+.crop-stage cropper-handle[action="ne-resize"] {
+  top: -14px !important;
+  right: -14px !important;
+}
+.crop-stage cropper-handle[action="nw-resize"] {
+  top: -14px !important;
+  left: -14px !important;
+}
+.crop-stage cropper-handle[action="se-resize"] {
+  bottom: -14px !important;
+  right: -14px !important;
+}
+.crop-stage cropper-handle[action="sw-resize"] {
+  bottom: -14px !important;
+  left: -14px !important;
+}
+
+/* Hide the default small dot (the :after pseudo-element inside shadow DOM) 
+   by making the host itself opaque and styled above */
+
 .crop-stage__image {
   width: 100%;
   height: 100%;
