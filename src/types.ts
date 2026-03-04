@@ -12,15 +12,15 @@ export interface RichText {
 }
 
 export interface LaserSettings {
-    width: number
-    height: number
-    padding: number
+    width?: number
+    height?: number
+    padding?: number
     unit: 'mm' | 'cm' | 'in'
     isFlipped: boolean
-    fontSize: number
+    fontSize?: number
     autoSize: boolean
     useRichTextMode: boolean
-    maxFontSize: number
+    maxFontSize?: number
 }
 
 export interface HistoryItem {

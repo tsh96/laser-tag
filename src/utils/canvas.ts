@@ -38,9 +38,9 @@ export function renderCanvas(canvas: HTMLCanvasElement, text: string, settings: 
   const { width, height, padding, unit } = settings
 
   // Convert dimensions to pixels at 300 DPI
-  const widthPx = convertToPixels(width, unit)
-  const heightPx = convertToPixels(height, unit)
-  const paddingPx = convertToPixels(padding, unit)
+  const widthPx = convertToPixels(width ?? 0, unit)
+  const heightPx = convertToPixels(height ?? 0, unit)
+  const paddingPx = convertToPixels(padding ?? 0, unit)
 
   // Set canvas size
   canvas.width = widthPx
@@ -157,9 +157,9 @@ export function renderRichTextCanvas(canvas: HTMLCanvasElement, richText: RichTe
   const { width, height, padding, unit } = settings
 
   // Convert dimensions to pixels at 300 DPI
-  const widthPx = convertToPixels(width, unit)
-  const heightPx = convertToPixels(height, unit)
-  const paddingPx = convertToPixels(padding, unit)
+  const widthPx = convertToPixels(width ?? 0, unit)
+  const heightPx = convertToPixels(height ?? 0, unit)
+  const paddingPx = convertToPixels(padding ?? 0, unit)
 
   // Set canvas size
   canvas.width = widthPx
@@ -360,8 +360,8 @@ export function renderMiniature(canvas: HTMLCanvasElement, text: string, setting
   const { width, height, unit } = settings
 
   // Calculate aspect ratio
-  const widthPx = convertToPixels(width, unit)
-  const heightPx = convertToPixels(height, unit)
+  const widthPx = convertToPixels(width ?? 0, unit)
+  const heightPx = convertToPixels(height ?? 0, unit)
   const aspectRatio = widthPx / heightPx
 
   // Calculate preview dimensions
@@ -400,8 +400,8 @@ export function renderRichTextMiniature(canvas: HTMLCanvasElement, richText: Ric
   const { width, height, unit } = settings
 
   // Calculate aspect ratio
-  const widthPx = convertToPixels(width, unit)
-  const heightPx = convertToPixels(height, unit)
+  const widthPx = convertToPixels(width ?? 0, unit)
+  const heightPx = convertToPixels(height ?? 0, unit)
   const aspectRatio = widthPx / heightPx
 
   // Calculate preview dimensions

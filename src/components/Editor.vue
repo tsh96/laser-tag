@@ -10,7 +10,7 @@
       <div class="field-group">
         <label class="field-label">Width</label>
         <div class="input-with-unit">
-          <input v-model.number="settings.width" type="number" min="0.1" step="0.1" class="field-control" />
+          <input v-model.number="settings.width" type="number" min="0.1" max="500" step="0.1" class="field-control" />
           <span class="input-unit">{{ settings.unit }}</span>
         </div>
       </div>
@@ -18,7 +18,7 @@
       <div class="field-group">
         <label class="field-label">Height</label>
         <div class="input-with-unit">
-          <input v-model.number="settings.height" type="number" min="0.1" step="0.1" class="field-control" />
+          <input v-model.number="settings.height" type="number" min="0.1" max="500" step="0.1" class="field-control" />
           <span class="input-unit">{{ settings.unit }}</span>
         </div>
       </div>
@@ -26,7 +26,7 @@
       <div class="field-group">
         <label class="field-label">Logo Padding</label>
         <div class="input-with-unit">
-          <input v-model.number="settings.padding" type="number" min="0" step="0.1" class="field-control" />
+          <input v-model.number="settings.padding" type="number" min="0" max="500" step="0.1" class="field-control" />
           <span class="input-unit">{{ settings.unit }}</span>
         </div>
       </div>
@@ -43,7 +43,7 @@
       <div class="field-group">
         <label class="field-label">Font Size</label>
         <div class="input-with-unit">
-          <input v-model.number="settings.fontSize" type="number" min="1" step="1" class="field-control"
+          <input v-model.number="settings.fontSize" type="number" min="1" max="100" step="1" class="field-control"
             :disabled="settings.autoSize || useRichTextMode" />
           <span class="input-unit">pt</span>
         </div>
@@ -52,7 +52,7 @@
       <div v-if="settings.autoSize" class="field-group">
         <label class="field-label">Max Font Size</label>
         <div class="input-with-unit">
-          <input v-model.number="settings.maxFontSize" type="number" min="1" step="1" class="field-control"
+          <input v-model.number="settings.maxFontSize" type="number" min="1" max="100" step="1" class="field-control"
             :disabled="!settings.autoSize" />
           <span class="input-unit">pt</span>
         </div>
@@ -151,8 +151,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, computed } from 'vue'
-import { useStorage, watchDebounced } from '@vueuse/core'
+import { ref, watch, onMounted, computed } from 'vue'
+import { clamp, useStorage, watchDebounced } from '@vueuse/core'
 import { renderCanvas, renderRichTextCanvas } from '../utils/canvas'
 import { generateBMP, downloadBMP, overwriteBMP } from '../utils/bmp'
 import { deleteField } from 'firebase/firestore'
@@ -181,15 +181,15 @@ const isValidUnit = (value: unknown): value is LaserSettings['unit'] => {
 
 const sanitizeSettings = (value: Partial<LaserSettings>): LaserSettings => {
   return {
-    width: typeof value.width === 'number' && value.width > 0 ? value.width : DEFAULT_SETTINGS.width,
-    height: typeof value.height === 'number' && value.height > 0 ? value.height : DEFAULT_SETTINGS.height,
-    padding: typeof value.padding === 'number' && value.padding >= 0 ? value.padding : DEFAULT_SETTINGS.padding,
+    width: typeof value.width === 'number' ? clamp(value.width, 0, 500) : undefined,
+    height: typeof value.height === 'number' ? clamp(value.height, 0, 500) : undefined,
+    padding: typeof value.padding === 'number' ? clamp(value.padding, 0, 500) : undefined,
     unit: isValidUnit(value.unit) ? value.unit : DEFAULT_SETTINGS.unit,
     isFlipped: typeof value.isFlipped === 'boolean' ? value.isFlipped : DEFAULT_SETTINGS.isFlipped,
-    fontSize: typeof value.fontSize === 'number' && value.fontSize > 0 ? value.fontSize : DEFAULT_SETTINGS.fontSize,
+    fontSize: typeof value.fontSize === 'number' ? clamp(value.fontSize, 1, 100) : undefined,
     autoSize: typeof value.autoSize === 'boolean' ? value.autoSize : DEFAULT_SETTINGS.autoSize,
     useRichTextMode: typeof value.useRichTextMode === 'boolean' ? value.useRichTextMode : DEFAULT_SETTINGS.useRichTextMode,
-    maxFontSize: typeof value.maxFontSize === 'number' && value.maxFontSize > 0 ? value.maxFontSize : DEFAULT_SETTINGS.maxFontSize
+    maxFontSize: typeof value.maxFontSize === 'number' ? clamp(value.maxFontSize, 1, 100) : undefined
   }
 }
 
@@ -201,13 +201,13 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const text = ref('Sample Text')
 const isLoading = ref(false)
 const useRichTextMode = computed({
-  get: () => settings.useRichTextMode,
+  get: () => settings.value.useRichTextMode,
   set: (value: boolean) => {
-    settings.useRichTextMode = value
+    settings.value.useRichTextMode = value
   }
 })
 
-const storedSettings = useStorage<LaserSettings>(
+const settings = useStorage<LaserSettings>(
   SETTINGS_STORAGE_KEY,
   { ...DEFAULT_SETTINGS },
   localStorage,
@@ -225,39 +225,47 @@ const storedSettings = useStorage<LaserSettings>(
   }
 )
 
-const settings = reactive<LaserSettings>(sanitizeSettings(storedSettings.value))
-const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.fontSize, fontFamily: 'Arial' }] })
-
+const settingsInput = ref<LaserSettings>({ ...settings.value })
 watch(
   settings,
-  (nextSettings) => {
-    storedSettings.value = sanitizeSettings({ ...nextSettings })
+  (newSettings) => {
+    const sanitized = sanitizeSettings(newSettings)
+    if (JSON.stringify(sanitized) !== JSON.stringify(settingsInput.value)) {
+      settingsInput.value = sanitized
+    }
   },
   { deep: true }
 )
 
 watch(
-  storedSettings,
-  (nextStoredSettings) => {
-    Object.assign(settings, sanitizeSettings(nextStoredSettings))
+  settingsInput,
+  (newInput) => {
+    const sanitized = sanitizeSettings(newInput)
+    if (JSON.stringify(sanitized) !== JSON.stringify(settings.value)) {
+      Object.assign(settings.value, sanitized)
+    }
   },
   { deep: true }
 )
+
+
+const richText = ref<RichText>({ spans: [{ text: 'Sample Text', fontSize: settings.value.fontSize ?? 1, fontFamily: 'Arial' }] })
+
 
 const updateCanvas = () => {
   if (canvasRef.value) {
     let actualFontSize: number | null = null
 
     if (useRichTextMode.value) {
-      actualFontSize = renderRichTextCanvas(canvasRef.value, richText.value, settings)
+      actualFontSize = renderRichTextCanvas(canvasRef.value, richText.value, settings.value)
     } else {
-      actualFontSize = renderCanvas(canvasRef.value, text.value, settings)
+      actualFontSize = renderCanvas(canvasRef.value, text.value, settings.value)
     }
 
-    if (settings.autoSize && typeof actualFontSize === 'number') {
+    if (settings.value.autoSize && typeof actualFontSize === 'number') {
       const roundedAutoFontSize = Math.round(actualFontSize)
-      if (settings.fontSize !== roundedAutoFontSize) {
-        settings.fontSize = roundedAutoFontSize
+      if (settings.value.fontSize !== roundedAutoFontSize) {
+        settings.value.fontSize = roundedAutoFontSize
       }
     }
   }
@@ -278,14 +286,14 @@ const convertToUppercase = () => {
 }
 
 const saveToHistory = () => {
-  addHistoryItem(text.value, settings, useRichTextMode.value ? richText.value : undefined)
+  addHistoryItem(text.value, settings.value, useRichTextMode.value ? richText.value : undefined)
 }
 
 const savePresetSettings = async () => {
   const name = prompt('Enter preset name:')
   if (name) {
     try {
-      await savePreset(name, { ...settings })
+      await savePreset(name, { ...settings.value })
       alert('Preset saved!')
     } catch (err) {
       alert('Failed to save preset')
@@ -296,7 +304,7 @@ const savePresetSettings = async () => {
 const applyPreset = () => {
   const preset = presets.value.find(p => p.id === selectedPresetId.value)
   if (preset) {
-    Object.assign(settings, preset.settings)
+    Object.assign(settings.value, preset.settings)
     selectedPresetId.value = ''
   }
 }
@@ -305,13 +313,13 @@ const exportBMP = async () => {
   if (canvasRef.value) {
     // Render at full resolution for export
     const exportCanvas = document.createElement('canvas')
-    if (useRichTextMode) {
-      renderRichTextCanvas(exportCanvas, richText.value, settings)
+    if (useRichTextMode.value) {
+      renderRichTextCanvas(exportCanvas, richText.value, settings.value)
     } else {
-      renderCanvas(exportCanvas, text.value, settings)
+      renderCanvas(exportCanvas, text.value, settings.value)
     }
 
-    const blob = generateBMP(exportCanvas, settings.isFlipped)
+    const blob = generateBMP(exportCanvas, settings.value.isFlipped)
 
     const result = await overwriteBMP(blob, 'output.bmp')
     if (result === 'fallback') {
@@ -326,13 +334,13 @@ const loadHistoryItem = (item: HistoryItem) => {
   if (item.settings.useRichTextMode && item.richText) {
     richText.value = item.richText
     text.value = item.richText.spans.map(s => s.text).join('')
-    settings.useRichTextMode = true
+    settings.value.useRichTextMode = true
   } else {
     text.value = item.text
-    richText.value = { spans: [{ text: item.text, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
-    settings.useRichTextMode = false
+    richText.value = { spans: [{ text: item.text, fontSize: settings.value.fontSize ?? 1, fontFamily: 'Arial' }] }
+    settings.value.useRichTextMode = false
   }
-  Object.assign(settings, sanitizeSettings(item.settings))
+  Object.assign(settings.value, sanitizeSettings(item.settings))
   isLoading.value = false
 }
 
@@ -344,7 +352,7 @@ watchDebounced(
         // Update existing history item
         const updates: any = {
           text: text.value,
-          settings: { ...settings }
+          settings: { ...settings.value }
         }
         if (useRichTextMode.value) {
           updates.richText = richText.value
@@ -364,7 +372,7 @@ async function triggerRichTextMode(newMode: boolean) {
   if (isLoading.value) return
   if (newMode) {
     // Switching to rich text mode - convert plain text to rich text
-    richText.value = { spans: [{ text: text.value, fontSize: settings.fontSize, fontFamily: 'Arial' }] }
+    richText.value = { spans: [{ text: text.value, fontSize: settings.value.fontSize ?? 1, fontFamily: 'Arial' }] }
   } else {
     // Switching to plain text mode - convert rich text to plain text
     text.value = richText.value.spans.map(span => span.text).join('')
@@ -375,7 +383,7 @@ async function triggerRichTextMode(newMode: boolean) {
     try {
       const updates: any = {
         text: text.value,
-        settings: { ...settings }
+        settings: { ...settings.value }
       }
       if (newMode) {
         updates.richText = richText.value
